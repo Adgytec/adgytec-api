@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/rohan031/adgytec-api/version1/helper"
-	"github.com/rohan031/adgytec-api/version1/services"
+	"github.com/rohan031/adgytec-api/helper"
+	"github.com/rohan031/adgytec-api/v1/services"
 )
 
 func GetNewslettersEmail(w http.ResponseWriter, r *http.Request) {

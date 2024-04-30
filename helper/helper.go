@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rohan031/adgytec-api/version1/services"
+	"github.com/rohan031/adgytec-api/v1/services"
 )
 
 func EncodeJSON(w http.ResponseWriter, status int, data interface{}) error {

@@ -23,11 +23,15 @@ func handle400(router *chi.Mux) {
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		var err = &InvalidRequestError{message: "404 route not found"}
 
+		// err := errors.New("404 route not found")
+
 		helper.ErrorResponse(w, err, http.StatusNotFound)
 	})
 
 	router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		var err = &InvalidRequestError{message: "405 invalid request method"}
+
+		// err := errors.New("405 invalid request method")
 
 		helper.ErrorResponse(w, err, http.StatusMethodNotAllowed)
 	})

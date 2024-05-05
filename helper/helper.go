@@ -2,38 +2,89 @@ package helper
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/rohan031/adgytec-api/v1/services"
 )
 
-func DecodeJSON(w http.ResponseWriter, r *http.Request, maxBytes int, payload interface{}) error {
+type Constraint interface {
+	services.Newsletter | services.JSONResponse
+}
+
+type MalformedRequest struct {
+	Status  int
+	Message string
+}
+
+func (mr *MalformedRequest) Error() string {
+	return mr.Message
+}
+
+func DecodeJSON[T Constraint](w http.ResponseWriter, r *http.Request, maxBytes int) (T, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 
-	if err := decoder.Decode(payload); err != nil {
-		return err
+	var payload T
+	err := decoder.Decode(&payload)
+
+	if err != nil {
+		var syntaxError *json.SyntaxError
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		switch {
+		case errors.As(err, &syntaxError):
+			message := fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
+			return payload, &MalformedRequest{Status: http.StatusBadRequest, Message: message}
+
+		case errors.Is(err, io.ErrUnexpectedEOF):
+			message := "Request body contains badly-formed JSON"
+			return payload, &MalformedRequest{Status: http.StatusBadRequest, Message: message}
+
+		case errors.As(err, &unmarshalTypeError):
+			message := fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
+			return payload, &MalformedRequest{Status: http.StatusBadRequest, Message: message}
+
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			message := fmt.Sprintf("Request body contains unknown field %s", fieldName)
+			return payload, &MalformedRequest{Status: http.StatusBadRequest, Message: message}
+
+		case errors.Is(err, io.EOF):
+			message := "Request body must not be empty"
+			return payload, &MalformedRequest{Status: http.StatusBadRequest, Message: message}
+
+		case err.Error() == "http: request body too large":
+			message := "Request body must not be larger than 1MB"
+			return payload, &MalformedRequest{Status: http.StatusRequestEntityTooLarge, Message: message}
+
+		default:
+			return payload, err
+		}
+	}
+	err = decoder.Decode(&struct{}{})
+	if !errors.Is(err, io.EOF) {
+		message := "Request body must only contain a single JSON object"
+		return payload, &MalformedRequest{Status: http.StatusBadRequest, Message: message}
 	}
 
-	return nil
+	return payload, nil
 }
 
-func EncodeJSON(w http.ResponseWriter, status int, data interface{}) error {
-	jsonRes, err := json.MarshalIndent(data, "", "\t")
-	if err != nil {
-		return err
-	}
+func EncodeJSON[T any](w http.ResponseWriter, status int, data T) {
+	jsonRes, _ := json.MarshalIndent(data, "", "\t")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	_, err = w.Write(jsonRes)
-	if err != nil {
-		return err
-	}
+	w.Write(jsonRes)
 
-	return nil
 }
 
 func ErrorResponse(w http.ResponseWriter, err error, status ...int) {
@@ -48,4 +99,17 @@ func ErrorResponse(w http.ResponseWriter, err error, status ...int) {
 	payload.Message = err.Error()
 
 	EncodeJSON(w, statusCode, payload)
+}
+
+func HandleError(w http.ResponseWriter, err error) {
+	var mr *MalformedRequest
+
+	if errors.As(err, &mr) {
+		ErrorResponse(w, mr, mr.Status)
+	} else {
+		log.Print(err.Error())
+		err = errors.New(http.StatusText(http.StatusInternalServerError))
+
+		ErrorResponse(w, err, http.StatusInternalServerError)
+	}
 }

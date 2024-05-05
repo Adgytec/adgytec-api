@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -19,11 +18,11 @@ func GetNewslettersEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostNewsletterEmail(w http.ResponseWriter, r *http.Request) {
-	var payload services.Newsletter
+	payload, err := helper.DecodeJSON[services.Newsletter](w, r, 1048576)
 
-	if err := helper.DecodeJSON(w, r, 1048576, &payload); err != nil {
-		err = errors.New("500 internal server error")
-		helper.ErrorResponse(w, err, http.StatusInternalServerError)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
 	}
 
 	fmt.Println(payload.Email)

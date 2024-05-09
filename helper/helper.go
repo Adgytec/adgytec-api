@@ -78,13 +78,23 @@ func DecodeJSON[T Constraint](w http.ResponseWriter, r *http.Request, maxBytes i
 }
 
 func EncodeJSON[T any](w http.ResponseWriter, status int, data T) {
-	jsonRes, _ := json.MarshalIndent(data, "", "\t")
+	jsonRes, err := json.MarshalIndent(data, "", "\t")
+
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	w.Write(jsonRes)
-
+	_, err = w.Write(jsonRes)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 }
 
 func ErrorResponse(w http.ResponseWriter, err error, status ...int) {

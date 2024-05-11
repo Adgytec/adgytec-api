@@ -19,6 +19,8 @@ const (
 	defaultConnectTimeout    = time.Second * 5
 )
 
+var DB *pgxpool.Pool // for use in middleware
+
 func dbConfig() (*pgxpool.Config, error) {
 	DATABASE_URL := os.Getenv("DB_DSN")
 
@@ -54,7 +56,7 @@ func dbConfig() (*pgxpool.Config, error) {
 func CreatePool() (*pgxpool.Pool, error) {
 	config, err := dbConfig()
 	if err != nil {
-		log.Println("Failed to create config, error")
+		log.Println("Failed to create config!!")
 		return nil, err
 	}
 
@@ -66,11 +68,12 @@ func CreatePool() (*pgxpool.Pool, error) {
 
 	err = pool.Ping(context.Background())
 	if err != nil {
-		log.Println("Could not ping database")
+		log.Println("Could not ping database!!")
 		return nil, err
 	}
 
 	log.Println("Connected to the Database!!")
 
+	DB = pool
 	return pool, nil
 }

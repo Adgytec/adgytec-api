@@ -13,7 +13,16 @@ import (
 )
 
 type Constraint interface {
-	services.Newsletter | services.JSONResponse
+	services.Newsletter | services.User
+}
+
+type CustomInternalServerError struct {
+	Status  int
+	Message string
+}
+
+func (c *CustomInternalServerError) Error() string {
+	return c.Message
 }
 
 type MalformedRequest struct {
@@ -65,6 +74,7 @@ func DecodeJSON[T Constraint](w http.ResponseWriter, r *http.Request, maxBytes i
 			return payload, &MalformedRequest{Status: http.StatusRequestEntityTooLarge, Message: message}
 
 		default:
+			log.Printf("Error decoding request body: %v\n", err)
 			return payload, err
 		}
 	}
@@ -117,7 +127,6 @@ func HandleError(w http.ResponseWriter, err error) {
 	if errors.As(err, &mr) {
 		ErrorResponse(w, mr, mr.Status)
 	} else {
-		log.Print(err.Error())
 		err = errors.New(http.StatusText(http.StatusInternalServerError))
 
 		ErrorResponse(w, err, http.StatusInternalServerError)

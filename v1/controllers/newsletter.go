@@ -18,7 +18,7 @@ func GetNewslettersEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostNewsletterEmail(w http.ResponseWriter, r *http.Request) {
-	payload, err := helper.DecodeJSON[services.Newsletter](w, r, 1048576)
+	payload, err := helper.DecodeJSON[services.Newsletter](w, r, mb)
 
 	if err != nil {
 		helper.HandleError(w, err)

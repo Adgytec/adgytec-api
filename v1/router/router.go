@@ -13,5 +13,7 @@ func Router() *chi.Mux {
 	router.Post("/newsletter", controllers.PostNewsletterEmail) // public route called from client frontend with their client token to add the email, if email already exists set status to subscribe
 	// patch method for unsubscribing from email newsletter
 
+	router.Post("/user", controllers.PostUser)
+
 	return router
 }

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width" />
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>Adgytec - Account Creation</title>
+	</head>
+
+	<body
+		style="
+			font-family: Verdana, Geneva, Tahoma, sans-serif;
+			color: #353535;
+			font-size: 1.125rem;
+		"
+	>
+		<div
+			class="container"
+			style="
+				width: min(100%, 40em);
+				margin-right: auto;
+				margin-left: auto;
+				margin-bottom: 1em;
+				margin-top: 4em;
+				border-bottom: 1px solid #353535;
+				padding-bottom: 1em;
+			"
+		>
+			<!-- content -->
+			<div class="content">
+				<p>Hello {{.Name}},</p>
+
+				<p>
+					We're thrilled to have you with us at
+					<strong>Adgytec</strong>. Here are the login credentials:
+				</p>
+
+				<table>
+					<tbody>
+						<tr>
+							<td>Email:</td>
+							<td class="value" style="padding-left: 1em">
+								<strong>{{.Email}}</strong>
+							</td>
+						</tr>
+
+						<tr>
+							<td>Password:</td>
+							<td class="value" style="padding-left: 1em">
+								<strong>{{.Password}}</strong>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<p>
+					Changing the password at the earliest convenience is
+					strongly advised.
+				</p>
+
+				<p>
+					Regards
+					<br />
+					Team Adgytec
+				</p>
+
+				<p class="small" style="margin-top: 2em; font-size: 0.875rem">
+					Note:
+					<em
+						>This is a system generated e-mail, please do not reply
+						to it.</em
+					>
+				</p>
+
+				<p
+					class="center"
+					style="text-align: center; margin-top: 2em; font-size: 1rem"
+				>
+					© 2024
+					<a href="https://adgytec.in" target="_blank">Adgytec</a> All
+					rights reserved.
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

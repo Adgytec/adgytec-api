@@ -1,24 +1,24 @@
 CREATE TABLE "users" (
-  "user_id" uuid PRIMARY KEY,
+  "user_id" varchar PRIMARY KEY,
   "name" varchar NOT NULL,
   "email" varchar NOT NULL,
-  "created_at" timestamp with time zone DEFAULT (now())
+  "created_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "project" (
   "project_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "project_name" varchar NOT NULL,
-  "created_at" timestamp with time zone DEFAULT (now())
+  "created_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "services" (
   "service_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "service_name" varchar NOT NULL,
-  "created_at" timestamp with time zone DEFAULT (now())
+  "created_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "user_to_project" (
-  "user_id" uuid,
+  "user_id" varchar,
   "project_id" uuid
 );
 

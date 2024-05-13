@@ -6,5 +6,4 @@ var db *pgxpool.Pool
 
 func SetDatabasePool(pool *pgxpool.Pool) {
 	db = pool
-
 }

@@ -9,6 +9,7 @@ RUN go build -o /go/bin/app -v ./cmd/server/main.go ./cmd/server/init.go
 #final stage
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
+COPY --from=builder /go/src/app/assets /assets
 COPY --from=builder /go/bin/app /app
 ENTRYPOINT /app
 LABEL Name=adgytecapi Version=0.0.1

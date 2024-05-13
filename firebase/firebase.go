@@ -5,10 +5,12 @@ import (
 	"os"
 
 	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"google.golang.org/api/option"
 )
 
 var FirebaseApp *firebase.App
+var FirebaseClient *auth.Client
 
 func InitFirebaseAdminSdk() error {
 	configBytes := []byte(os.Getenv("CONFIG"))
@@ -19,6 +21,12 @@ func InitFirebaseAdminSdk() error {
 		return err
 	}
 
+	client, err := app.Auth(context.Background())
+	if err != nil {
+		return err
+	}
+
 	FirebaseApp = app
+	FirebaseClient = client
 	return nil
 }

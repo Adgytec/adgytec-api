@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/rohan031/adgytec-api/helper"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/services"
@@ -67,4 +69,11 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusPartialContent
 	}
 	helper.EncodeJSON(w, status, payload)
+}
+
+// update user details
+func PatchUser(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+
+	log.Println(idParam)
 }

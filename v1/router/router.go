@@ -19,6 +19,7 @@ func Router() *chi.Mux {
 		r.Use(middleware.RoleAuthorization)
 
 		r.Post("/user", controllers.PostUser)
+		r.Patch("/user/{id}", controllers.PatchUser)
 	})
 
 	return router

@@ -1,5 +1,11 @@
 package validation
 
+const (
+	superAdmin string = "super_admin"
+	admin      string = "admin"
+	user       string = "user"
+)
+
 func ValidateEmail(email string) bool {
 	// validating email syntax and checking for valid email domain
 	return isEmailSyntaxValid(email) && isDomainValid(email)
@@ -7,13 +13,15 @@ func ValidateEmail(email string) bool {
 
 func ValidateRole(role string) bool {
 	// checking if the new role is a valid role
-	const (
-		superAdmin string = "super_admin"
-		admin      string = "admin"
-		user       string = "user"
-	)
-
 	return role == superAdmin || role == admin || role == user
+}
+
+func AuthorizeRole(myRole, role string) bool {
+	if role == user {
+		return true
+	}
+
+	return myRole == superAdmin
 }
 
 func ValidateName(name string) bool {

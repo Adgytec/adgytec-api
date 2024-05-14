@@ -6,10 +6,13 @@ import (
 	"github.com/rohan031/adgytec-api/helper"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/services"
+	"github.com/rohan031/adgytec-api/v1/validation"
 )
 
 // creating new user
 func PostUser(w http.ResponseWriter, r *http.Request) {
+	myRole := r.Context().Value(custom.UserRole).(string)
+
 	// decoding request body
 	data, err := helper.DecodeJSON[services.User](w, r, mb)
 	if err != nil {
@@ -19,7 +22,16 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 
 	// validating request body parameters
 	if !data.ValidateInput() {
-		err = &custom.MalformedRequest{Status: http.StatusBadRequest, Message: "Invalid input values"}
+		message := "The request body contains invalid input values."
+		err = &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+		helper.HandleError(w, err)
+		return
+	}
+
+	// validate required permission
+	if !validation.AuthorizeRole(myRole, data.Role) {
+		message := "Insufficient privileges to create a user account with the specified role."
+		err = &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
 		helper.HandleError(w, err)
 		return
 	}

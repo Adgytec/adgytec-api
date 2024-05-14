@@ -73,9 +73,9 @@ func TokenAuthetication(next http.Handler) http.Handler {
 
 func RoleAuthorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userRole := r.Context().Value(custom.UserRole)
+		userRole := r.Context().Value(custom.UserRole).(string)
 		if userRole == "user" {
-			message := "You lack the necessary permissions to create a user account."
+			message := "Insufficient privileges to create a user account."
 			err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
 			helper.HandleError(w, err)
 			return

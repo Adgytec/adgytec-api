@@ -103,5 +103,7 @@ func (u *User) CreateUser() (string, error) {
 
 func (u *User) ValidateInput() bool {
 	// validating email, role and name parameters
-	return validation.ValidateEmail(u.Email) && validation.ValidateRole(u.Role) && validation.ValidateName(u.Name)
+	return (validation.ValidateEmail(u.Email) &&
+		validation.ValidateRole(u.Role) &&
+		validation.ValidateName(u.Name))
 }

@@ -73,7 +73,31 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 
 // update user details
 func PatchUser(w http.ResponseWriter, r *http.Request) {
+	myId := r.Context().Value(custom.UserID).(string)
+	myRole := r.Context().Value(custom.UserRole).(string)
 	idParam := chi.URLParam(r, "id")
 
+	if myRole != "super_admin" || myId != idParam {
+		// fetch role for the given id from db
+		// if role != user => return
+		return
+	}
+
 	log.Println(idParam)
+	log.Println(myRole)
+}
+
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	// myId := r.Context().Value(custom.UserID).(string)
+	myRole := r.Context().Value(custom.UserRole).(string)
+	idParam := chi.URLParam(r, "id")
+
+	if myRole != "super_admin" {
+		// fetch role for the given id from db
+		// if role != user => return
+		return
+	}
+
+	log.Println(idParam)
+	log.Println(myRole)
 }

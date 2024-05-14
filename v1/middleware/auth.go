@@ -79,17 +79,20 @@ func TokenAuthetication(next http.Handler) http.Handler {
 
 func RoleAuthorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// getting id params for patch or delete req
-		idParam := chi.URLParam(r, "id")
 
-		// check if req is for patch or delete: /users/{id}
-		if len(idParam) != 0 {
-			uid := r.Context().Value(custom.UserID).(string)
+		if r.Method == http.MethodPatch {
+			// getting id params for patch method
+			idParam := chi.URLParam(r, "id")
 
-			// if user is trying to perform action in their account
-			if idParam == uid {
-				next.ServeHTTP(w, r)
-				return
+			// check if req is for patch method: /users/{id}
+			if len(idParam) != 0 {
+				uid := r.Context().Value(custom.UserID).(string)
+
+				// if user is trying to perform action in their account
+				if idParam == uid {
+					next.ServeHTTP(w, r)
+					return
+				}
 			}
 		}
 

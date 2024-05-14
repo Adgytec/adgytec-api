@@ -15,7 +15,9 @@ func Router() *chi.Mux {
 	// patch method for unsubscribing from email newsletter
 
 	router.Group(func(r chi.Router) {
-		r.Use(middleware.TokenVerification)
+		r.Use(middleware.TokenAuthetication)
+		r.Use(middleware.RoleAuthorization)
+
 		r.Post("/user", controllers.PostUser)
 	})
 

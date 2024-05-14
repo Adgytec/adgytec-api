@@ -12,7 +12,7 @@ import (
 	"github.com/rohan031/adgytec-api/v1/custom"
 )
 
-func TokenVerification(next http.Handler) http.Handler {
+func TokenAuthetication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// check for bearer token
 		authHeader := r.Header.Get("Authorization")
@@ -61,14 +61,25 @@ func TokenVerification(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println(token.Claims["role"])
-		log.Println(token.UID)
-
 		ctx := r.Context()
 		req := r.WithContext(context.WithValue(ctx, custom.UserID, token.UID))
 		req = req.WithContext(context.WithValue(ctx, custom.UserRole, token.Claims["role"]))
 
 		*r = *req
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func RoleAuthorization(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userRole := r.Context().Value(custom.UserRole)
+		if userRole == "user" {
+			message := "You lack the necessary permissions to create a user account."
+			err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
+			helper.HandleError(w, err)
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})

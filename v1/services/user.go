@@ -5,11 +5,14 @@ import (
 	"crypto/rand"
 	"log"
 	"math/big"
+	"net/http"
 	"strings"
 
 	"firebase.google.com/go/v4/auth"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/rohan031/adgytec-api/firebase"
+	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/validation"
 )
 
@@ -51,21 +54,27 @@ func generateRandomPassword() (string, error) {
 }
 
 func (u *User) CreateUser() (string, error) {
-	// use admin sdk to create user in firebase
-	// save newly created user to user table
+	// creating random password
 	password, err := generateRandomPassword()
 	if err != nil {
 		log.Printf("Error generating password: %v\n", err)
 		return "", err
 	}
 
+	// creating user in firebase
 	params := (&auth.UserToCreate{}).Email(u.Email).DisplayName(u.Name).Password(password)
 	userRecord, err := firebase.FirebaseClient.CreateUser(context.Background(), params)
 	if err != nil {
+		if auth.IsEmailAlreadyExists(err) {
+			message := "The email address provided is already associated with an existing user account."
+			return "", &custom.MalformedRequest{Status: http.StatusConflict, Message: message}
+		}
+
 		log.Printf("Error creating user in firebase: %v\n", err)
 		return "", err
 	}
 
+	// setting custom claims for newly created user
 	uid := userRecord.UID
 	claims := map[string]interface{}{"role": u.Role}
 	err = firebase.FirebaseClient.SetCustomUserClaims(context.Background(), uid, claims)
@@ -74,12 +83,13 @@ func (u *User) CreateUser() (string, error) {
 		return "", err
 	}
 
-	// inserting into database
-	query := `INSERT INTO users (user_id, name, email) values (@userId, @name, @email)`
+	// inserting into database user table
+	query := `INSERT INTO users (user_id, name, email, role) values (@userId, @name, @email, @role	)`
 	args := pgx.NamedArgs{
 		"userId": uid,
 		"email":  u.Email,
 		"name":   u.Name,
+		"role":   u.Role,
 	}
 
 	_, err = db.Exec(context.Background(), query, args)
@@ -92,5 +102,6 @@ func (u *User) CreateUser() (string, error) {
 }
 
 func (u *User) ValidateInput() bool {
-	return validation.ValidateEmail(u.Email) && validation.ValidateRole(u.Role)
+	// validating email, role and name parameters
+	return validation.ValidateEmail(u.Email) && validation.ValidateRole(u.Role) && validation.ValidateName(u.Name)
 }

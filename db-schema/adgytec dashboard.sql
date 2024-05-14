@@ -2,6 +2,7 @@ CREATE TABLE "users" (
   "user_id" varchar PRIMARY KEY,
   "name" varchar NOT NULL,
   "email" varchar NOT NULL,
+  "role" varchar NOT NULL
   "created_at" timestamp DEFAULT (now())
 );
 

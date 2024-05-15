@@ -43,7 +43,7 @@ func TokenAuthetication(next http.Handler) http.Handler {
 
 		// verify id token provided
 		idToken := authArray[1]
-		token, err := firebase.FirebaseClient.VerifyIDToken(context.Background(), idToken)
+		token, err := firebase.FirebaseClient.VerifyIDToken(ctx, idToken)
 		if err != nil {
 
 			if auth.IsIDTokenExpired(err) {

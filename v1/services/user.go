@@ -1,18 +1,20 @@
 package services
 
 import (
-	"context"
 	"crypto/rand"
+	"errors"
 	"log"
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"firebase.google.com/go/v4/auth"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/v1/custom"
+	"github.com/rohan031/adgytec-api/v1/dbqueries"
 	"github.com/rohan031/adgytec-api/v1/validation"
 )
 
@@ -23,9 +25,11 @@ type UserCreationDetails struct {
 }
 
 type User struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	Name      string    `json:"name" db:"name"`
+	Email     string    `json:"email" db:"email"`
+	Role      string    `json:"role" db:"role"`
+	UserId    string    `json:"userId,omitempty" db:"user_id"`
+	CreatedAt time.Time `json:"createdAt,omitempty" db:"created_at"`
 }
 
 func generateRandomPassword() (string, error) {
@@ -53,6 +57,51 @@ func generateRandomPassword() (string, error) {
 	return password.String(), nil
 }
 
+/*
+if user exists in db return true
+else delete user from firebase and re-add it
+return false, err // internal server error
+return true, nil // user exits
+return false, nil // delete user from firebase and create new user
+*/
+func userExistsInDb(email string) (bool, error) {
+	args := dbqueries.GetUserByEmailArgs(email)
+
+	rows, err := db.Query(ctx, dbqueries.GetUserByEmail, args)
+	if err != nil {
+		log.Printf("Error fetching user from db: %v\n", err)
+		return false, err
+	}
+	defer rows.Close()
+
+	userData, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// todo
+			// delete user from firebase
+			u, err := firebase.FirebaseClient.GetUserByEmail(ctx, email)
+			if err != nil {
+				log.Printf("Error getting user data from firebase: %v\n", err)
+				return false, err
+			}
+
+			err = firebase.FirebaseClient.DeleteUser(ctx, u.UID)
+			if err != nil {
+				log.Printf("Error deleting user from firebase: %v\n", err)
+				return false, err
+			}
+
+			return false, nil
+		}
+		log.Printf("error reading rows: %v\n", err)
+		return false, err
+	}
+
+	log.Println(userData)
+
+	return true, nil
+}
+
 func (u *User) CreateUser() (string, error) {
 	// creating random password
 	password, err := generateRandomPassword()
@@ -63,11 +112,20 @@ func (u *User) CreateUser() (string, error) {
 
 	// creating user in firebase
 	params := (&auth.UserToCreate{}).Email(u.Email).DisplayName(u.Name).Password(password)
-	userRecord, err := firebase.FirebaseClient.CreateUser(context.Background(), params)
+	userRecord, err := firebase.FirebaseClient.CreateUser(ctx, params)
 	if err != nil {
 		if auth.IsEmailAlreadyExists(err) {
-			message := "The email address provided is already associated with an existing user account."
-			return "", &custom.MalformedRequest{Status: http.StatusConflict, Message: message}
+			ispresent, err := userExistsInDb(u.Email)
+			if err != nil {
+				return "", err
+			}
+
+			if ispresent {
+				message := "The email address provided is already associated with an existing user account."
+				return "", &custom.MalformedRequest{Status: http.StatusConflict, Message: message}
+			}
+
+			return u.CreateUser()
 		}
 
 		log.Printf("Error creating user in firebase: %v\n", err)
@@ -77,22 +135,15 @@ func (u *User) CreateUser() (string, error) {
 	// setting custom claims for newly created user
 	uid := userRecord.UID
 	claims := map[string]interface{}{"role": u.Role}
-	err = firebase.FirebaseClient.SetCustomUserClaims(context.Background(), uid, claims)
+	err = firebase.FirebaseClient.SetCustomUserClaims(ctx, uid, claims)
 	if err != nil {
 		log.Printf("Error setting custom claims: %v\n", err)
 		return "", err
 	}
 
 	// inserting into database user table
-	query := `INSERT INTO users (user_id, name, email, role) values (@userId, @name, @email, @role	)`
-	args := pgx.NamedArgs{
-		"userId": uid,
-		"email":  u.Email,
-		"name":   u.Name,
-		"role":   u.Role,
-	}
-
-	_, err = db.Exec(context.Background(), query, args)
+	args := dbqueries.CreateUserArgs(uid, u.Email, u.Name, u.Role)
+	_, err = db.Exec(ctx, dbqueries.CreateUser, args)
 	if err != nil {
 		log.Printf("Error adding user in database: %v\n", err)
 		return "", err
@@ -107,3 +158,16 @@ func (u *User) ValidateInput() bool {
 		validation.ValidateRole(u.Role) &&
 		validation.ValidateName(u.Name))
 }
+
+// To do
+// method to update name
+// method to update role
+// method to update name and role
+// method to delete user
+// method to get all users
+// method to get a single user
+
+// delete user
+// func (u *User) DeleteUser() error {
+
+// }

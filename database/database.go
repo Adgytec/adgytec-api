@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var ctx context.Context = context.Background()
+
 const (
 	defaultMaxConns          = int32(4)
 	defaultMinConns          = int32(0)
@@ -60,13 +62,13 @@ func CreatePool() (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		log.Println("Error while creating connection to the database!!")
 		return nil, err
 	}
 
-	err = pool.Ping(context.Background())
+	err = pool.Ping(ctx)
 	if err != nil {
 		log.Println("Could not ping database!!")
 		return nil, err

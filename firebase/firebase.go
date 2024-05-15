@@ -11,17 +11,18 @@ import (
 
 var FirebaseApp *firebase.App
 var FirebaseClient *auth.Client
+var ctx context.Context = context.Background()
 
 func InitFirebaseAdminSdk() error {
 	configBytes := []byte(os.Getenv("CONFIG"))
 	opt := option.WithCredentialsJSON(configBytes)
 
-	app, err := firebase.NewApp(context.Background(), nil, opt)
+	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
 		return err
 	}
 
-	client, err := app.Auth(context.Background())
+	client, err := app.Auth(ctx)
 	if err != nil {
 		return err
 	}

@@ -20,6 +20,7 @@ func Router() *chi.Mux {
 
 		r.Post("/user", controllers.PostUser)
 		r.Patch("/user/{id}", controllers.PatchUser)
+		r.Delete("/user/{id}", controllers.DeleteUser)
 	})
 
 	return router

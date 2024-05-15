@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
@@ -65,8 +66,8 @@ return true, nil // user exits
 return false, nil // delete user from firebase and create new user
 */
 func userExistsInDb(email string) (bool, error) {
+	// fetching the user from db
 	args := dbqueries.GetUserByEmailArgs(email)
-
 	rows, err := db.Query(ctx, dbqueries.GetUserByEmail, args)
 	if err != nil {
 		log.Printf("Error fetching user from db: %v\n", err)
@@ -74,11 +75,10 @@ func userExistsInDb(email string) (bool, error) {
 	}
 	defer rows.Close()
 
-	userData, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
+	_, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			// todo
-			// delete user from firebase
+			// user doesn't exist in db
 			u, err := firebase.FirebaseClient.GetUserByEmail(ctx, email)
 			if err != nil {
 				log.Printf("Error getting user data from firebase: %v\n", err)
@@ -97,8 +97,6 @@ func userExistsInDb(email string) (bool, error) {
 		return false, err
 	}
 
-	log.Println(userData)
-
 	return true, nil
 }
 
@@ -115,16 +113,19 @@ func (u *User) CreateUser() (string, error) {
 	userRecord, err := firebase.FirebaseClient.CreateUser(ctx, params)
 	if err != nil {
 		if auth.IsEmailAlreadyExists(err) {
+			// find user in db
 			ispresent, err := userExistsInDb(u.Email)
 			if err != nil {
 				return "", err
 			}
 
+			// user already exists
 			if ispresent {
 				message := "The email address provided is already associated with an existing user account."
 				return "", &custom.MalformedRequest{Status: http.StatusConflict, Message: message}
 			}
 
+			// create new user with given details
 			return u.CreateUser()
 		}
 
@@ -167,7 +168,48 @@ func (u *User) ValidateInput() bool {
 // method to get all users
 // method to get a single user
 
-// delete user
-// func (u *User) DeleteUser() error {
+func deleteUserFromFirebase(userId string, wg *sync.WaitGroup, errchan chan error) {
+	defer wg.Done()
 
-// }
+	err := firebase.FirebaseClient.DeleteUser(ctx, userId)
+	if err != nil {
+		log.Printf("Error deleting user from firebase: %v\n", err)
+		errchan <- err
+	}
+
+	errchan <- nil
+}
+
+func deleteUserFromDatabase(userId string, wg *sync.WaitGroup, errchan chan error) {
+	defer wg.Done()
+
+	args := dbqueries.DeleteUserArgs(userId)
+	_, err := db.Exec(ctx, dbqueries.DeleteUser, args)
+	if err != nil {
+		log.Printf("Error deleting user in database: %v\n", err)
+		errchan <- err
+	}
+
+	errchan <- nil
+}
+
+// delete user
+func (u *User) DeleteUser() error {
+	errchan := make(chan error, 2)
+	wg := new(sync.WaitGroup)
+
+	wg.Add(2)
+	go deleteUserFromFirebase(u.UserId, wg, errchan)
+	go deleteUserFromDatabase(u.UserId, wg, errchan)
+
+	wg.Wait()
+	close(errchan)
+
+	for err := range errchan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

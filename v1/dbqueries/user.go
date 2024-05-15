@@ -23,3 +23,12 @@ func GetUserByEmailArgs(email string) pgx.NamedArgs {
 		"email": email,
 	}
 }
+
+// delete user by id
+const DeleteUser = `DELETE FROM users WHERE user_id=@userId`
+
+func DeleteUserArgs(userId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"userId": userId,
+	}
+}

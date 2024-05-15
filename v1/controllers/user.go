@@ -88,16 +88,21 @@ func PatchUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	// myId := r.Context().Value(custom.UserID).(string)
-	myRole := r.Context().Value(custom.UserRole).(string)
-	idParam := chi.URLParam(r, "id")
+	userToDeleteId := chi.URLParam(r, "id")
 
-	if myRole != "super_admin" {
-		// fetch role for the given id from db
-		// if role != user => return
+	userData := services.User{
+		UserId: userToDeleteId,
+	}
+
+	err := userData.DeleteUser()
+	if err != nil {
+		helper.HandleError(w, err)
 		return
 	}
 
-	log.Println(idParam)
-	log.Println(myRole)
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "The user has been successfully deleted."
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
 }

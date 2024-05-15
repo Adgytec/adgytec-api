@@ -79,7 +79,7 @@ func TokenAuthetication(next http.Handler) http.Handler {
 
 func RoleAuthorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		// patch method middleware
 		if r.Method == http.MethodPatch {
 			// getting id params for patch method
 			idParam := chi.URLParam(r, "id")
@@ -103,6 +103,41 @@ func RoleAuthorization(next http.Handler) http.Handler {
 			err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
 			helper.HandleError(w, err)
 			return
+		}
+
+		// delete method middleware
+		if r.Method == http.MethodDelete {
+			idParam := chi.URLParam(r, "id")
+
+			if len(idParam) != 0 {
+				// uid := r.Context().Value(custom.UserID).(string)
+				userRole := r.Context().Value(custom.UserRole).(string)
+
+				// fetch user from firebase
+				u, err := firebase.FirebaseClient.GetUser(ctx, idParam)
+				if err != nil {
+					if auth.IsUserNotFound(err) {
+						message := "No user found for deletion."
+						err := &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+						helper.HandleError(w, err)
+						return
+					}
+
+					log.Printf("Error getting user from firebase:%v\n", err)
+					helper.HandleError(w, err)
+					return
+				}
+
+				userToDeleteRole := u.CustomClaims["role"]
+
+				if userRole != "super_admin" && userRole == userToDeleteRole {
+					message := "Insufficient privileges to perform requested action."
+					err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
+					helper.HandleError(w, err)
+					return
+				}
+
+			}
 		}
 
 		next.ServeHTTP(w, r)

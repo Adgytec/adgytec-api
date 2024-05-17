@@ -33,6 +33,9 @@ type User struct {
 	CreatedAt time.Time `json:"createdAt,omitempty" db:"created_at"`
 }
 
+/*
+create user
+*/
 func generateRandomPassword() (string, error) {
 	// Define character sets for password generation
 	upperChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -160,14 +163,125 @@ func (u *User) ValidateInput() bool {
 		validation.ValidateName(u.Name))
 }
 
-// To do
-// method to update name
-// method to update role
-// method to update name and role
-// method to delete user
-// method to get all users
-// method to get a single user
+/*
+update user:
+updateUser() => updates user role and name
+updateUserName() => updates user name
+*/
+func (u *User) ValidateUpdateInput() bool {
+	// validating email, role and name parameters
+	return (validation.ValidateRole(u.Role) ||
+		validation.ValidateName(u.Name))
+}
 
+func updateUserFirebase(userId, name, role string, wg *sync.WaitGroup, errchan chan error) {
+	defer wg.Done()
+
+	// updating user name
+	params := (&auth.UserToUpdate{}).DisplayName(name)
+	_, err := firebase.FirebaseClient.UpdateUser(ctx, userId, params)
+	if err != nil {
+		log.Fatalf("Error updating user: %v\n", err)
+		errchan <- err
+		return
+	}
+
+	// updating custom claims
+	newClaims := map[string]interface{}{"role": role}
+	err = firebase.FirebaseClient.SetCustomUserClaims(ctx, userId, newClaims)
+	if err != nil {
+		log.Printf("Error setting custom claims: %v\n", err)
+		errchan <- err
+		return
+	}
+
+	errchan <- nil
+}
+
+func updateUserDatabase(userId, name, role string, wg *sync.WaitGroup, errchan chan error) {
+	defer wg.Done()
+
+	args := dbqueries.UpdateUserArgs(name, role, userId)
+	_, err := db.Exec(ctx, dbqueries.UpdateUser, args)
+	if err != nil {
+		log.Printf("Error updating user in database: %v\n", err)
+		errchan <- err
+		return
+	}
+
+	errchan <- nil
+}
+
+func (u *User) UpdateUser() error {
+	errchan := make(chan error, 2)
+	wg := new(sync.WaitGroup)
+
+	wg.Add(2)
+	go updateUserFirebase(u.UserId, u.Name, u.Role, wg, errchan)
+	go updateUserDatabase(u.UserId, u.Name, u.Role, wg, errchan)
+
+	wg.Wait()
+	close(errchan)
+
+	for err := range errchan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateUserNameFirebase(userId, name string, wg *sync.WaitGroup, errchan chan error) {
+	defer wg.Done()
+
+	params := (&auth.UserToUpdate{}).DisplayName(name)
+	_, err := firebase.FirebaseClient.UpdateUser(ctx, userId, params)
+	if err != nil {
+		log.Fatalf("Error updating user: %v\n", err)
+		errchan <- err
+		return
+	}
+	errchan <- nil
+}
+
+func updateUserNameDatabase(userId, name string, wg *sync.WaitGroup, errchan chan error) {
+	defer wg.Done()
+
+	args := dbqueries.UpdateUserNameArgs(name, userId)
+	_, err := db.Exec(ctx, dbqueries.UpdateUserName, args)
+	if err != nil {
+		log.Printf("Error updating user in database: %v\n", err)
+		errchan <- err
+		return
+	}
+
+	errchan <- nil
+}
+
+func (u *User) UpdateUserName() error {
+	errchan := make(chan error, 2)
+	wg := new(sync.WaitGroup)
+
+	wg.Add(2)
+	go updateUserNameFirebase(u.UserId, u.Name, wg, errchan)
+	go updateUserNameDatabase(u.UserId, u.Name, wg, errchan)
+
+	wg.Wait()
+	close(errchan)
+
+	for err := range errchan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+/*
+delete user
+*/
 func deleteUserFromFirebase(userId string, wg *sync.WaitGroup, errchan chan error) {
 	defer wg.Done()
 
@@ -175,6 +289,7 @@ func deleteUserFromFirebase(userId string, wg *sync.WaitGroup, errchan chan erro
 	if err != nil {
 		log.Printf("Error deleting user from firebase: %v\n", err)
 		errchan <- err
+		return
 	}
 
 	errchan <- nil
@@ -188,6 +303,7 @@ func deleteUserFromDatabase(userId string, wg *sync.WaitGroup, errchan chan erro
 	if err != nil {
 		log.Printf("Error deleting user in database: %v\n", err)
 		errchan <- err
+		return
 	}
 
 	errchan <- nil

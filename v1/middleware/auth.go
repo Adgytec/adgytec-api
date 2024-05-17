@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"firebase.google.com/go/v4/auth"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/helper"

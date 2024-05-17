@@ -4,7 +4,10 @@ import (
 	"log"
 	"net/http"
 
+	"firebase.google.com/go/v4/auth"
+
 	"github.com/go-chi/chi/v5"
+	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/helper"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/services"
@@ -75,16 +78,102 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 func PatchUser(w http.ResponseWriter, r *http.Request) {
 	myId := r.Context().Value(custom.UserID).(string)
 	myRole := r.Context().Value(custom.UserRole).(string)
-	idParam := chi.URLParam(r, "id")
+	userId := chi.URLParam(r, "id")
 
-	if myRole != "super_admin" || myId != idParam {
-		// fetch role for the given id from db
-		// if role != user => return
+	// success response
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully updated user details"
+
+	// fetching user from firebase
+	u, err := firebase.FirebaseClient.GetUser(ctx, userId)
+	if err != nil {
+		if auth.IsUserNotFound(err) {
+			message := "No user found."
+			err := &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			helper.HandleError(w, err)
+			return
+		}
+
+		log.Printf("Error getting user from firebase:%v\n", err)
+		helper.HandleError(w, err)
+		return
+	}
+	userRole := u.CustomClaims["role"]
+
+	// decoding req body
+	data, err := helper.DecodeJSON[services.User](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+	data.UserId = userId
+
+	// validating request body parameters
+	if !data.ValidateUpdateInput() {
+		message := "The request body contains invalid input values."
+		err = &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+		helper.HandleError(w, err)
 		return
 	}
 
-	log.Println(idParam)
-	log.Println(myRole)
+	// filling any missing data for update user function
+	if data.Name == "" {
+		data.Name = u.DisplayName
+	}
+	if data.Role == "" && userRole != nil {
+		data.Role = userRole.(string)
+	}
+
+	// super admins can perform any action
+	if myRole == "super_admin" {
+		err = data.UpdateUser()
+		if err != nil {
+			helper.HandleError(w, err)
+			return
+		}
+		helper.EncodeJSON(w, http.StatusOK, payload)
+		return
+	}
+
+	// role is now admin or user and desired role is super admin
+	// only super admin can grant this role
+	if data.Role == "super_admin" {
+		message := "Insufficient privileges to perform requested action."
+		err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
+		helper.HandleError(w, err)
+		return
+	}
+
+	// if my role is user allow them to update name
+	// in middleware we checked if they are trying to update their account
+	// myid == userid because for role admin
+	if myRole == "user" || myId == userId {
+		err := data.UpdateUserName()
+		if err != nil {
+			helper.HandleError(w, err)
+			return
+		}
+		helper.EncodeJSON(w, http.StatusOK, payload)
+		return
+	}
+
+	// request owner role is admin
+	// if user role is not user than its either admin or superadmin
+	// and the req doesn't belong to update their resource
+	if userRole != "user" {
+		message := "Insufficient privileges to perform requested action."
+		err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
+		helper.HandleError(w, err)
+		return
+	}
+
+	err = data.UpdateUser()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+	helper.EncodeJSON(w, http.StatusOK, payload)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {

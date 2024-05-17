@@ -32,3 +32,24 @@ func DeleteUserArgs(userId string) pgx.NamedArgs {
 		"userId": userId,
 	}
 }
+
+// update user name
+const UpdateUserName = `UPDATE users SET name=@name WHERE user_id=@userId`
+
+func UpdateUserNameArgs(name, userId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"name":   name,
+		"userId": userId,
+	}
+}
+
+// update user name and role
+const UpdateUser = `UPDATE users SET name=@name, role=@role WHERE user_id=@userId`
+
+func UpdateUserArgs(name, role, userId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"name":   name,
+		"role":   role,
+		"userId": userId,
+	}
+}

@@ -15,12 +15,30 @@ func CreateUserArgs(uid, email, name, role string) pgx.NamedArgs {
 	}
 }
 
-// get a single user
+// get all users
+const GetUsers = `Select * FROM users where cursor>@cursor LIMIT 100`
+
+func GetUsersArgs(cursor int) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"cursor": cursor,
+	}
+}
+
+// get a single user by email
 const GetUserByEmail = `SELECT * FROM users where email=@email`
 
 func GetUserByEmailArgs(email string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"email": email,
+	}
+}
+
+//get a single user by userid
+const GetUserByID = `SELECT * FROM users where user_id=@userId`
+
+func GetUserByIDArgs(userId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"userId": userId,
 	}
 }
 

@@ -14,6 +14,7 @@ func Router() *chi.Mux {
 	router.Post("/newsletter", controllers.PostNewsletterEmail) // public route called from client frontend with their client token to add the email, if email already exists set status to subscribe
 	// patch method for unsubscribing from email newsletter
 
+	// user module
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthetication)
 		r.Use(middleware.RoleAuthorization)
@@ -21,6 +22,8 @@ func Router() *chi.Mux {
 		r.Post("/user", controllers.PostUser)
 		r.Patch("/user/{id}", controllers.PatchUser)
 		r.Delete("/user/{id}", controllers.DeleteUser)
+		r.Get("/user/{id}", controllers.GetUserById)
+		r.Get("/users", controllers.GetAllUsers)
 	})
 
 	return router

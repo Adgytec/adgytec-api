@@ -31,6 +31,7 @@ type User struct {
 	Role      string    `json:"role" db:"role"`
 	UserId    string    `json:"userId,omitempty" db:"user_id"`
 	CreatedAt time.Time `json:"createdAt,omitempty" db:"created_at"`
+	Cursor    int       `json:"-" db:"cursor"`
 }
 
 /*
@@ -96,7 +97,7 @@ func userExistsInDb(email string) (bool, error) {
 
 			return false, nil
 		}
-		log.Printf("error reading rows: %v\n", err)
+		log.Printf("Error reading rows: %v\n", err)
 		return false, err
 	}
 
@@ -328,4 +329,47 @@ func (u *User) DeleteUser() error {
 	}
 
 	return nil
+}
+
+/*
+get user
+*/
+func (u *User) GetUserById() (*User, error) {
+	args := dbqueries.GetUserByIDArgs(u.UserId)
+	rows, err := db.Query(ctx, dbqueries.GetUserByID, args)
+	if err != nil {
+		log.Printf("Error fetching user from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	user, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "User with the provided ID does not exist."
+			return nil, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+		}
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (u *User) GetAllUsers(cursor int) (*[]User, error) {
+	args := dbqueries.GetUsersArgs(cursor)
+	rows, err := db.Query(ctx, dbqueries.GetUsers, args)
+	if err != nil {
+		log.Printf("Error fetching user from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	return &users, nil
 }

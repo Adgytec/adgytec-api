@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"firebase.google.com/go/v4/auth"
 
@@ -192,6 +194,62 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Message = "The user has been successfully deleted."
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func GetUserById(w http.ResponseWriter, r *http.Request) {
+	userId := chi.URLParam(r, "id")
+
+	userData := services.User{
+		UserId: userId,
+	}
+
+	user, err := userData.GetUserById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+
+	payload.Error = false
+	payload.Data = user
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	cursor := r.URL.Query().Get("cursor")
+
+	if cursor == "" {
+		cursor = "0"
+	}
+
+	cursorInt, err := strconv.Atoi(cursor)
+	if err != nil {
+		var numError *strconv.NumError
+		if errors.As(err, &numError) {
+			message := "The provided cursor query parameter is invalid."
+			err = &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			helper.HandleError(w, err)
+			return
+		}
+		log.Printf("Error converting cursor string to int: %v\n", err)
+		helper.HandleError(w, err)
+	}
+
+	var users services.User
+
+	all, err := users.GetAllUsers(cursorInt)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

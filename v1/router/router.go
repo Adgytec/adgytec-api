@@ -17,13 +17,21 @@ func Router() *chi.Mux {
 	// user module
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthetication)
-		r.Use(middleware.RoleAuthorization)
+		r.Use(middleware.UserRoleAuthorization)
 
 		r.Post("/user", controllers.PostUser)
 		r.Patch("/user/{id}", controllers.PatchUser)
 		r.Delete("/user/{id}", controllers.DeleteUser)
 		r.Get("/user/{id}", controllers.GetUserById)
 		r.Get("/users", controllers.GetAllUsers)
+	})
+
+	// project module
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.TokenAuthetication)
+		r.Use(middleware.AdminRoleAuthorization)
+
+		r.Post("/project", controllers.PostProject)
 	})
 
 	return router

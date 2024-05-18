@@ -78,7 +78,7 @@ func TokenAuthetication(next http.Handler) http.Handler {
 	})
 }
 
-func RoleAuthorization(next http.Handler) http.Handler {
+func UserRoleAuthorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// patch method middleware
 		if r.Method == http.MethodPatch {
@@ -139,6 +139,21 @@ func RoleAuthorization(next http.Handler) http.Handler {
 				}
 
 			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func AdminRoleAuthorization(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// admin and super admin having privilaged rights
+		userRole := r.Context().Value(custom.UserRole).(string)
+		if userRole == "user" {
+			message := "Insufficient privileges to perform requested action."
+			err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
+			helper.HandleError(w, err)
+			return
 		}
 
 		next.ServeHTTP(w, r)

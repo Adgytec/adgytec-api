@@ -26,5 +26,3 @@ func main() {
 	log.Printf("Server is listening on PORT: %s", PORT)
 	http.ListenAndServe(":"+PORT, router)
 }
-
-// TODO: add cursor (count) in user table for pagination

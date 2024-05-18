@@ -1,7 +1,13 @@
 package dbqueries
 
-import "github.com/jackc/pgx/v5"
+import (
+	"fmt"
+	"strings"
 
+	"github.com/jackc/pgx/v5"
+)
+
+// create project
 const CreateProject = `INSERT INTO project (project_name)
 						VALUES (@projectName)`
 
@@ -9,4 +15,19 @@ func CreateProjectArgs(projectName string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectName": projectName,
 	}
+}
+
+// add services to project
+func AddServicesToProject(projectId string, services []string) string {
+	query := "INSERT INTO project_to_service (project_id, service_id) VALUES "
+	var values []string
+
+	for _, id := range services {
+		value := fmt.Sprintf("('%v', '%v')", projectId, id)
+		values = append(values, value)
+	}
+
+	query += strings.Join(values, ", ")
+
+	return query
 }

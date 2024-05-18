@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/rohan031/adgytec-api/helper"
 	"github.com/rohan031/adgytec-api/v1/services"
 )
@@ -24,6 +26,28 @@ func PostProject(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Message = fmt.Sprintf("Successfully created new project: %s", project.ProjectName)
+
+	helper.EncodeJSON(w, http.StatusCreated, payload)
+}
+
+func PostProjectAndServices(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+
+	s, err := helper.DecodeJSON[services.ProjectServiceMap](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	err = s.CreateProjectServiceMap(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = fmt.Sprintf("Successfuly added services to project-id: %s", projectId)
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }

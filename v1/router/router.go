@@ -32,6 +32,7 @@ func Router() *chi.Mux {
 		r.Use(middleware.AdminRoleAuthorization)
 
 		r.Post("/project", controllers.PostProject)
+		r.Post("/project/{projectId}/services", controllers.PostProjectAndServices)
 	})
 
 	return router

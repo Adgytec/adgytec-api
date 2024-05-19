@@ -33,6 +33,7 @@ func Router() *chi.Mux {
 
 		r.Post("/project", controllers.PostProject)
 		r.Post("/project/{projectId}/services", controllers.PostProjectAndServices)
+		r.Post("/project/{projectId}/user", controllers.PostProjectAndUser)
 	})
 
 	return router

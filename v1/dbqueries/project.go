@@ -31,3 +31,15 @@ func AddServicesToProject(projectId string, services []string) string {
 
 	return query
 }
+
+// add a user to project
+const AddUserToProject = `INSERT INTO user_to_project (user_id, project_id)
+	VALUES (@userId, @projectId)
+`
+
+func AddUserToProjectArgs(userId, projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"userId":    userId,
+		"projectId": projectId,
+	}
+}

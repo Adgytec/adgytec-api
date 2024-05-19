@@ -51,3 +51,25 @@ func PostProjectAndServices(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }
+
+func PostProjectAndUser(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+
+	user, err := helper.DecodeJSON[services.ProjectUserMap](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	err = user.CreateUserProjectMap(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = fmt.Sprintf("Successfuly added user-id: %v to project-id: %s", user.UserId, projectId)
+
+	helper.EncodeJSON(w, http.StatusCreated, payload)
+}

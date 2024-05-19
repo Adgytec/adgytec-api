@@ -297,6 +297,8 @@ func deleteUserFromFirebase(userId string, wg *sync.WaitGroup, errchan chan erro
 }
 
 func deleteUserFromDatabase(userId string, wg *sync.WaitGroup, errchan chan error) {
+	// delete user from users table
+	// delete user to project mapping for that user
 	defer wg.Done()
 
 	args := dbqueries.DeleteUserArgs(userId)

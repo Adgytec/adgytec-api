@@ -61,7 +61,14 @@ func TokenAuthetication(next http.Handler) http.Handler {
 				return
 			}
 
-			log.Fatalf("error verifying ID token: %v\n", err)
+			log.Printf("error verifying ID token: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+
+		if token.Claims["role"] == nil {
+			message := "User doesn't have any role associated."
+			err := &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message}
 			helper.HandleError(w, err)
 			return
 		}

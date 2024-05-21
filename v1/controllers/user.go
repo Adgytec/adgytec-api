@@ -66,7 +66,7 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 
 	payload.Error = false
-	payload.Message = "Successfully created user account"
+	payload.Message = "Successfully created user account."
 
 	status := http.StatusCreated
 	if err != nil {

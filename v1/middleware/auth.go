@@ -233,3 +233,47 @@ func AdminRoleAuthorization(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// services endpoint auth
+func ServicesRoleAuthorization(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userRole := r.Context().Value(custom.UserRole).(string)
+		userId := r.Context().Value(custom.UserID).(string)
+		projectId := chi.URLParam(r, "projectId")
+
+		if userRole != "user" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// check for user project
+		args := dbqueries.GetProjectIdByUserIdArgs(userId)
+		rows, err := database.DB.Query(ctx, dbqueries.GetProjectIdByUserId, args)
+		if err != nil {
+			log.Printf("Error fetching project id from db: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+		defer rows.Close()
+
+		project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ClientToken])
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				message := "Current user is not associated with any project."
+				helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message})
+				return
+			}
+			log.Printf("Error reading rows: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+
+		if project.ProjectId != projectId {
+			message := "Insufficient privileges to perform requested action."
+			helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message})
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}

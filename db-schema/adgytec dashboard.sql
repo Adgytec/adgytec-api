@@ -43,3 +43,21 @@ ALTER TABLE "project_to_service" ADD FOREIGN KEY ("project_id") REFERENCES "proj
 ALTER TABLE "project_to_service" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("service_id") on delete cascade on update cascade;
 
 ALTER TABLE "client_token" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+
+
+/* 
+    service schema
+*/
+
+/* news */
+CREATE TABLE "news" (
+    "news_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+    "project_id" uuid,
+    "title" varchar NOT NULL,
+    "link" varchar NOT NULL,
+    "text" varchar NOT NULL,
+    "image" varchar NOT NULL,
+    "created_at" timestamp DEFAULT (now())
+);
+
+ALTER TABLE "news" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;

@@ -36,5 +36,18 @@ func Router() *chi.Mux {
 		r.Post("/project/{projectId}/user", controllers.PostProjectAndUser)
 	})
 
+	// services
+	// client token authentication for public endpoints
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.ClientTokenAuthentication)
+		// endpoints here
+	})
+
+	//dashboard endpoins for services
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.TokenAuthetication)
+		r.Use(middleware.ServicesRoleAuthorization)
+	})
+
 	return router
 }

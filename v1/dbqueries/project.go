@@ -62,3 +62,11 @@ func GetProjectIdByClientTokenArgs(clientToken string) pgx.NamedArgs {
 		"clientToken": clientToken,
 	}
 }
+
+const GetProjectIdByUserId = `select project_id from user_to_project where user_id=@userId`
+
+func GetProjectIdByUserIdArgs(userId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"userId": userId,
+	}
+}

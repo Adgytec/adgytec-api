@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -9,10 +10,76 @@ import (
 	"firebase.google.com/go/v4/auth"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
+	"github.com/rohan031/adgytec-api/database"
 	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/helper"
 	"github.com/rohan031/adgytec-api/v1/custom"
+	"github.com/rohan031/adgytec-api/v1/dbqueries"
 )
+
+type ClientToken struct {
+	ProjectId string `db:"project_id"`
+}
+
+func ClientTokenAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// check for authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			message := "The request lacks an authorization header."
+			err := &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message}
+			helper.HandleError(w, err)
+			return
+		}
+
+		// check for valid header
+		authArray := strings.Split(authHeader, " ")
+		if len(authArray) != 2 {
+			message := "The authentication header provided is invalid."
+			err := &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message}
+			helper.HandleError(w, err)
+			return
+		}
+
+		// check for bearer scheme
+		if bearer := authArray[0]; bearer != "Bearer" {
+			message := "The authentication scheme provided is invalid."
+			err := &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message}
+			helper.HandleError(w, err)
+			return
+		}
+
+		clientToken := authArray[1]
+		args := dbqueries.GetProjectIdByClientTokenArgs(clientToken)
+		rows, err := database.DB.Query(ctx, dbqueries.GetProjectIdByClientToken, args)
+		if err != nil {
+			log.Printf("Error fetching project id from db: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+		defer rows.Close()
+
+		project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ClientToken])
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				message := "Project with the provided client token does not exist."
+				helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message})
+				return
+			}
+			log.Printf("Error reading rows: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, custom.ProjectId, project.ProjectId)
+		req := r.WithContext(ctx)
+
+		*r = *req
+		next.ServeHTTP(w, r)
+	})
+}
 
 func TokenAuthetication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

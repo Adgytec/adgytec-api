@@ -43,14 +43,15 @@ func GetUserByIDArgs(userId string) pgx.NamedArgs {
 }
 
 // delete user by id
-// const DeleteUser = `DELETE FROM users WHERE user_id=@userId`
-const DeleteUser = `WITH deleted_user AS(
-	DELETE FROM users 
-	WHERE user_id=@userId
-	RETURNING user_id
-)
-DELETE FROM user_to_project
-WHERE user_id IN (SELECT user_id FROM deleted_user)`
+const DeleteUser = `DELETE FROM users WHERE user_id=@userId`
+
+// const DeleteUser = `WITH deleted_user AS(
+// 	DELETE FROM users
+// 	WHERE user_id=@userId
+// 	RETURNING user_id
+// )
+// DELETE FROM user_to_project
+// WHERE user_id IN (SELECT user_id FROM deleted_user)`
 
 func DeleteUserArgs(userId string) pgx.NamedArgs {
 	return pgx.NamedArgs{

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"log"
 	"net/http"
@@ -23,15 +25,30 @@ type ProjectServiceMap struct {
 	Services []string `json:"services"`
 }
 
-func (p *Project) CreateProject() error {
-	args := dbqueries.CreateProjectArgs(p.ProjectName)
-	_, err := db.Exec(ctx, dbqueries.CreateProject, args)
+func generateSecureToken() (string, error) {
+	b := make([]byte, 12)
+	if _, err := rand.Read(b); err != nil {
+		log.Printf("Error generating client token: %v\n", err)
+
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+func (p *Project) CreateProject() (string, error) {
+	clientToken, err := generateSecureToken()
 	if err != nil {
-		log.Printf("Error adding project in database: %v\n", err)
-		return err
+		return "", err
 	}
 
-	return nil
+	args := dbqueries.CreateProjectArgs(p.ProjectName, clientToken)
+	_, err = db.Exec(ctx, dbqueries.CreateProject, args)
+	if err != nil {
+		log.Printf("Error adding project in database: %v\n", err)
+		return "", err
+	}
+
+	return clientToken, nil
 }
 
 func (ps *ProjectServiceMap) CreateProjectServiceMap(projectId string) error {

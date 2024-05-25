@@ -1,4 +1,4 @@
-.PHONY: run build test
+.PHONY: run build test prepareTest
 
 run:
 	go run cmd/server/main.go cmd/server/init.go
@@ -8,3 +8,6 @@ build:
 
 test:
 	go test -v ./...
+
+prepareTest:
+	go run ./test/prepare/main.go

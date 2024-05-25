@@ -8,12 +8,22 @@ import (
 )
 
 // create project
-const CreateProject = `INSERT INTO project (project_name)
-						VALUES (@projectName)`
+// const CreateProject = `INSERT INTO project (project_name)
+//
+//	VALUES (@projectName)`
+const CreateProject = `WITH inserted_row AS (
+    INSERT INTO project (project_name)
+    VALUES (@projectName)
+    RETURNING project_id
+)
+INSERT INTO client_token (token, project_id)
+SELECT @clientToken, project_id
+FROM inserted_row;`
 
-func CreateProjectArgs(projectName string) pgx.NamedArgs {
+func CreateProjectArgs(projectName, clientToken string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectName": projectName,
+		"clientToken": clientToken,
 	}
 }
 

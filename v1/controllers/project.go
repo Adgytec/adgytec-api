@@ -17,7 +17,7 @@ func PostProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = project.CreateProject()
+	clientToken, err := project.CreateProject()
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -26,6 +26,11 @@ func PostProject(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Message = fmt.Sprintf("Successfully created new project: %s", project.ProjectName)
+	payload.Data = &struct {
+		ClientToken string `json:"clientToken"`
+	}{
+		ClientToken: clientToken,
+	}
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }

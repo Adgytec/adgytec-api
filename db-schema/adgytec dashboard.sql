@@ -4,7 +4,7 @@ CREATE TABLE "users" (
   "email" varchar NOT NULL,
   "created_at" timestamp DEFAULT (now()),
   "role" varchar NOT NULL,
-  "cursor" serial NOT NULL DEFAULT (nextval('users_cursor_seq'::regclass))
+  "cursor" serial NOT NULL
 );
 
 CREATE TABLE "project" (
@@ -34,12 +34,12 @@ CREATE TABLE "client_token" (
   "project_id" uuid
 );
 
-ALTER TABLE "user_to_project" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id");
+ALTER TABLE "user_to_project" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on delete cascade on update cascade;
 
-ALTER TABLE "user_to_project" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id");
+ALTER TABLE "user_to_project" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
 
-ALTER TABLE "project_to_service" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id");
+ALTER TABLE "project_to_service" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
 
-ALTER TABLE "project_to_service" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("service_id");
+ALTER TABLE "project_to_service" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("service_id") on delete cascade on update cascade;
 
-ALTER TABLE "client_token" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id");
+ALTER TABLE "client_token" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;

@@ -70,3 +70,11 @@ func GetProjectIdByUserIdArgs(userId string) pgx.NamedArgs {
 		"userId": userId,
 	}
 }
+
+const GetProjectById = `select project_name from project where project_id=@projectId`
+
+func GetProjectByIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
+}

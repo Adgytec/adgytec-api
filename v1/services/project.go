@@ -1,8 +1,6 @@
 package services
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"log"
 	"net/http"
@@ -23,16 +21,6 @@ type ProjectUserMap struct {
 
 type ProjectServiceMap struct {
 	Services []string `json:"services"`
-}
-
-func generateSecureToken() (string, error) {
-	b := make([]byte, 12)
-	if _, err := rand.Read(b); err != nil {
-		log.Printf("Error generating client token: %v\n", err)
-
-		return "", err
-	}
-	return hex.EncodeToString(b), nil
 }
 
 func (p *Project) CreateProject() (string, error) {

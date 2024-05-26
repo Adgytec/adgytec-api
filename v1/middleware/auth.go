@@ -22,6 +22,10 @@ type ClientToken struct {
 	ProjectId string `db:"project_id"`
 }
 
+type ProjectName struct {
+	ProjectName string `db:"project_name"`
+}
+
 func ClientTokenAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// check for authorization header
@@ -241,14 +245,37 @@ func ServicesRoleAuthorization(next http.Handler) http.Handler {
 		userId := r.Context().Value(custom.UserID).(string)
 		projectId := chi.URLParam(r, "projectId")
 
+		// check if project exists
+		args := dbqueries.GetProjectByIdArgs(projectId)
+		rows, err := database.DB.Query(ctx, dbqueries.GetProjectById, args)
+		if err != nil {
+			log.Printf("Error fetching project id from db: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+		defer rows.Close()
+
+		_, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[ProjectName])
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				message := "Project with given id not found"
+				helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message})
+				return
+			}
+			log.Printf("Error reading rows: %v\n", err)
+			helper.HandleError(w, err)
+			return
+		}
+
+		// check if its admin
 		if userRole != "user" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		// check for user project
-		args := dbqueries.GetProjectIdByUserIdArgs(userId)
-		rows, err := database.DB.Query(ctx, dbqueries.GetProjectIdByUserId, args)
+		args = dbqueries.GetProjectIdByUserIdArgs(userId)
+		rows, err = database.DB.Query(ctx, dbqueries.GetProjectIdByUserId, args)
 		if err != nil {
 			log.Printf("Error fetching project id from db: %v\n", err)
 			helper.HandleError(w, err)

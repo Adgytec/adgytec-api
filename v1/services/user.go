@@ -191,11 +191,9 @@ func updateUserFirebase(userId, name, role string, wg *sync.WaitGroup, errchan c
 	err = firebaseClient.SetCustomUserClaims(ctx, userId, newClaims)
 	if err != nil {
 		log.Printf("Error setting custom claims: %v\n", err)
-		errchan <- err
-		return
 	}
 
-	errchan <- nil
+	errchan <- err
 }
 
 func updateUserDatabase(userId, name, role string, wg *sync.WaitGroup, errchan chan error) {
@@ -205,11 +203,9 @@ func updateUserDatabase(userId, name, role string, wg *sync.WaitGroup, errchan c
 	_, err := db.Exec(ctx, dbqueries.UpdateUser, args)
 	if err != nil {
 		log.Printf("Error updating user in database: %v\n", err)
-		errchan <- err
-		return
 	}
 
-	errchan <- nil
+	errchan <- err
 }
 
 func (u *User) UpdateUser() error {
@@ -239,10 +235,9 @@ func updateUserNameFirebase(userId, name string, wg *sync.WaitGroup, errchan cha
 	_, err := firebaseClient.UpdateUser(ctx, userId, params)
 	if err != nil {
 		log.Fatalf("Error updating user: %v\n", err)
-		errchan <- err
-		return
+
 	}
-	errchan <- nil
+	errchan <- err
 }
 
 func updateUserNameDatabase(userId, name string, wg *sync.WaitGroup, errchan chan error) {
@@ -252,11 +247,9 @@ func updateUserNameDatabase(userId, name string, wg *sync.WaitGroup, errchan cha
 	_, err := db.Exec(ctx, dbqueries.UpdateUserName, args)
 	if err != nil {
 		log.Printf("Error updating user in database: %v\n", err)
-		errchan <- err
-		return
 	}
 
-	errchan <- nil
+	errchan <- err
 }
 
 func (u *User) UpdateUserName() error {

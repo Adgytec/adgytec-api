@@ -132,3 +132,38 @@ func HandleError(w http.ResponseWriter, err error) {
 		ErrorResponse(w, err, http.StatusInternalServerError)
 	}
 }
+
+func ParseMultipartForm(w http.ResponseWriter, r *http.Request, maxSize int) error {
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxSize))
+	err := r.ParseMultipartForm(int64(maxSize))
+	if err != nil {
+		log.Println(err)
+		if strings.Contains(err.Error(), "http: request body too large") {
+			messgage := "request body too large. Limit 10MB"
+			HandleError(w, &custom.MalformedRequest{Status: http.StatusRequestEntityTooLarge, Message: messgage})
+			return err
+		}
+
+		if strings.Contains(err.Error(), "mime: no media type") {
+			HandleError(w, &custom.MalformedRequest{
+				Status:  http.StatusUnsupportedMediaType,
+				Message: http.StatusText(http.StatusUnsupportedMediaType),
+			})
+			return err
+		}
+
+		if strings.Contains(err.Error(), "request Content-Type isn't multipart/form-data") {
+			HandleError(w, &custom.MalformedRequest{
+				Status:  http.StatusBadRequest,
+				Message: "Request Content-Type isn't multipart/form-data",
+			})
+			return err
+		}
+
+		log.Printf("Error parsing multipart form data: %v\n", err)
+		HandleError(w, err)
+		return err
+	}
+
+	return nil
+}

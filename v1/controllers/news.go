@@ -1,119 +1,65 @@
 package controllers
 
 import (
-	"bytes"
-	"image"
-	"log"
+	"fmt"
 	"net/http"
-	"os"
-	"strings"
 
-	_ "image/gif"
-	"image/jpeg"
-	"image/png"
-
-	"github.com/minio/minio-go/v7"
-	"github.com/nfnt/resize"
+	"github.com/go-chi/chi/v5"
 	"github.com/rohan031/adgytec-api/helper"
-	"github.com/rohan031/adgytec-api/storage"
 	"github.com/rohan031/adgytec-api/v1/custom"
+	"github.com/rohan031/adgytec-api/v1/services"
 )
 
 func PostNews(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
 	maxSize := 10 << 20
-
-	r.Body = http.MaxBytesReader(w, r.Body, int64(maxSize))
-	err := r.ParseMultipartForm(int64(maxSize))
+	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
-		log.Println(err)
-		if strings.Contains(err.Error(), "http: request body too large") {
-			messgage := "request body too large. Limit 10MB"
-			helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusRequestEntityTooLarge, Message: messgage})
-			return
-		}
+		return
+	}
 
-		if strings.Contains(err.Error(), "mime: no media type") {
-			helper.HandleError(w, &custom.MalformedRequest{
-				Status:  http.StatusUnsupportedMediaType,
-				Message: http.StatusText(http.StatusUnsupportedMediaType),
-			})
-			return
-		}
+	requiredFields := []string{"title", "text", "link"}
+	requiredFileFields := "image"
 
-		if strings.Contains(err.Error(), "request Content-Type isn't multipart/form-data") {
+	for _, field := range requiredFields {
+		if _, ok := r.MultipartForm.Value[field]; !ok {
+			message := fmt.Sprintf("Missing required field: %s", field)
 			helper.HandleError(w, &custom.MalformedRequest{
 				Status:  http.StatusBadRequest,
-				Message: "Request Content-Type isn't multipart/form-data",
+				Message: message,
 			})
 			return
 		}
-
-		log.Printf("Error parsing multipart form data: %v\n", err)
-		helper.HandleError(w, err)
-		return
 	}
 
-	file, handler, err := r.FormFile("image")
-	if err != nil {
-		log.Printf("Error retriving file: %v\n ", err)
-		helper.HandleError(w, err)
-		return
-	}
-	defer file.Close()
-
-	contentType := handler.Header.Get("Content-type")
-	if !strings.HasPrefix(contentType, "image/") {
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
 		helper.HandleError(w, &custom.MalformedRequest{
-			Status:  http.StatusUnsupportedMediaType,
-			Message: http.StatusText(http.StatusUnsupportedMediaType),
+			Status:  http.StatusBadRequest,
+			Message: message,
 		})
 		return
 	}
 
-	img, format, err := image.Decode(file)
+	title := r.FormValue("title")
+	text := r.FormValue("text")
+	link := r.FormValue("link")
+	newsDetails := &services.News{
+		Title: title,
+		Text:  text,
+		Link:  link,
+	}
+
+	err = newsDetails.CreateNewsItem(r, projectId)
 	if err != nil {
-		log.Printf("Error decoding image: %v\n", err)
 		helper.HandleError(w, err)
 		return
 	}
 
-	resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
-	buf := new(bytes.Buffer)
-	switch strings.ToLower(format) {
-	case "jpeg", "jpg":
-		err = jpeg.Encode(buf, resizedImg, &jpeg.Options{Quality: 80})
-		if err != nil {
-			log.Printf("failed to encode JPEG image: %v", err)
-			helper.HandleError(w, err)
-			return
-		}
-	case "png":
-		encoder := png.Encoder{CompressionLevel: png.BestCompression}
-		err = encoder.Encode(buf, resizedImg)
-		if err != nil {
-			log.Printf("failed to encode PNG image: %v", err)
-			helper.HandleError(w, err)
-			return
-		}
-	default:
-		log.Printf("unsupported image format: %s", format)
-		message := "unsupported image format"
-		helper.HandleError(w, &custom.MalformedRequest{
-			Status: http.StatusUnsupportedMediaType, Message: message,
-		})
-		return
-	}
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully created news item."
 
-	objectName := "services/news/image." + format
+	helper.EncodeJSON(w, http.StatusCreated, payload)
 
-	_, err = storage.SpaceStorage.PutObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, buf, int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
-	if err != nil {
-		log.Printf("failed to upload file: %v", err)
-		helper.HandleError(w, err)
-		return
-	}
-
-	log.Printf("Successfully uploaded %s\n", objectName)
-
-	// fmt.Println(img)
 }

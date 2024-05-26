@@ -13,7 +13,6 @@ import (
 	"firebase.google.com/go/v4/auth"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
 	"github.com/rohan031/adgytec-api/v1/validation"
@@ -83,13 +82,13 @@ func userExistsInDb(email string) (bool, error) {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// user doesn't exist in db
-			u, err := firebase.FirebaseClient.GetUserByEmail(ctx, email)
+			u, err := firebaseClient.GetUserByEmail(ctx, email)
 			if err != nil {
 				log.Printf("Error getting user data from firebase: %v\n", err)
 				return false, err
 			}
 
-			err = firebase.FirebaseClient.DeleteUser(ctx, u.UID)
+			err = firebaseClient.DeleteUser(ctx, u.UID)
 			if err != nil {
 				log.Printf("Error deleting user from firebase: %v\n", err)
 				return false, err
@@ -114,7 +113,7 @@ func (u *User) CreateUser() (string, error) {
 
 	// creating user in firebase
 	params := (&auth.UserToCreate{}).Email(u.Email).DisplayName(u.Name).Password(password)
-	userRecord, err := firebase.FirebaseClient.CreateUser(ctx, params)
+	userRecord, err := firebaseClient.CreateUser(ctx, params)
 	if err != nil {
 		if auth.IsEmailAlreadyExists(err) {
 			// find user in db
@@ -140,7 +139,7 @@ func (u *User) CreateUser() (string, error) {
 	// setting custom claims for newly created user
 	uid := userRecord.UID
 	claims := map[string]interface{}{"role": u.Role}
-	err = firebase.FirebaseClient.SetCustomUserClaims(ctx, uid, claims)
+	err = firebaseClient.SetCustomUserClaims(ctx, uid, claims)
 	if err != nil {
 		log.Printf("Error setting custom claims: %v\n", err)
 		return "", err
@@ -180,7 +179,7 @@ func updateUserFirebase(userId, name, role string, wg *sync.WaitGroup, errchan c
 
 	// updating user name
 	params := (&auth.UserToUpdate{}).DisplayName(name)
-	_, err := firebase.FirebaseClient.UpdateUser(ctx, userId, params)
+	_, err := firebaseClient.UpdateUser(ctx, userId, params)
 	if err != nil {
 		log.Fatalf("Error updating user: %v\n", err)
 		errchan <- err
@@ -189,7 +188,7 @@ func updateUserFirebase(userId, name, role string, wg *sync.WaitGroup, errchan c
 
 	// updating custom claims
 	newClaims := map[string]interface{}{"role": role}
-	err = firebase.FirebaseClient.SetCustomUserClaims(ctx, userId, newClaims)
+	err = firebaseClient.SetCustomUserClaims(ctx, userId, newClaims)
 	if err != nil {
 		log.Printf("Error setting custom claims: %v\n", err)
 		errchan <- err
@@ -237,7 +236,7 @@ func updateUserNameFirebase(userId, name string, wg *sync.WaitGroup, errchan cha
 	defer wg.Done()
 
 	params := (&auth.UserToUpdate{}).DisplayName(name)
-	_, err := firebase.FirebaseClient.UpdateUser(ctx, userId, params)
+	_, err := firebaseClient.UpdateUser(ctx, userId, params)
 	if err != nil {
 		log.Fatalf("Error updating user: %v\n", err)
 		errchan <- err
@@ -286,7 +285,7 @@ delete user
 func deleteUserFromFirebase(userId string, wg *sync.WaitGroup, errchan chan error) {
 	defer wg.Done()
 
-	err := firebase.FirebaseClient.DeleteUser(ctx, userId)
+	err := firebaseClient.DeleteUser(ctx, userId)
 	if err != nil {
 		log.Printf("Error deleting user from firebase: %v\n", err)
 		errchan <- err

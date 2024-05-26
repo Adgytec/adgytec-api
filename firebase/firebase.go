@@ -13,21 +13,21 @@ var FirebaseApp *firebase.App
 var FirebaseClient *auth.Client
 var ctx context.Context = context.Background()
 
-func InitFirebaseAdminSdk() error {
+func InitFirebaseAdminSdk() (*auth.Client, error) {
 	configBytes := []byte(os.Getenv("CONFIG"))
 	opt := option.WithCredentialsJSON(configBytes)
 
 	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	client, err := app.Auth(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	FirebaseApp = app
 	FirebaseClient = client
-	return nil
+	return client, nil
 }

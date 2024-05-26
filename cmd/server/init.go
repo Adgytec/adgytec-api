@@ -12,6 +12,7 @@ import (
 	"github.com/rohan031/adgytec-api/database"
 	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/helper"
+	"github.com/rohan031/adgytec-api/storage"
 	v1Router "github.com/rohan031/adgytec-api/v1/router"
 	"github.com/rohan031/adgytec-api/v1/services"
 )
@@ -30,18 +31,20 @@ func handle400(router *chi.Mux) {
 	})
 }
 
-func initFirebase() error {
-	err := firebase.InitFirebaseAdminSdk()
-	return err
-}
-
 func initApp() (*chi.Mux, *pgxpool.Pool) {
 	// init firebase
-	err := initFirebase()
+	firebaseClient, err := firebase.InitFirebaseAdminSdk()
 	if err != nil {
 		log.Fatal("Error connecting to firebase!!\n", err)
 	}
 	log.Println("Successfully connected to firebase!!")
+
+	// init cloud storage
+	minioClient, err := storage.InitCloudStorage()
+	if err != nil {
+		log.Fatal("Error creating minio-client!!\n", err)
+	}
+	log.Println("Successfully created mino storage client!!")
 
 	// getting db connection pool
 	pool, err := database.CreatePool()
@@ -49,7 +52,7 @@ func initApp() (*chi.Mux, *pgxpool.Pool) {
 		log.Fatal("Error connecting to database\n", err)
 	}
 	// setting database pool for use in services
-	services.SetDatabasePool(pool)
+	services.SetExternalConnection(pool, minioClient, firebaseClient)
 
 	router := chi.NewRouter()
 

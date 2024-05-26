@@ -47,6 +47,8 @@ func Router() *chi.Mux {
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthetication)
 		r.Use(middleware.ServicesRoleAuthorization)
+
+		r.Post("/services/news/{projectId}", controllers.PostNews)
 	})
 
 	return router

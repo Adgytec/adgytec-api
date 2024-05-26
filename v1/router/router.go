@@ -41,6 +41,8 @@ func Router() *chi.Mux {
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.ClientTokenAuthentication)
 		// endpoints here
+
+		r.Get("/services/news", controllers.GetAllNewsByProject)
 	})
 
 	//dashboard endpoins for services

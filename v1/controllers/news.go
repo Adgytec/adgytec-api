@@ -61,5 +61,21 @@ func PostNews(w http.ResponseWriter, r *http.Request) {
 	payload.Message = "Successfully created news item."
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
+}
 
+func GetAllNewsByProject(w http.ResponseWriter, r *http.Request) {
+	projectId := r.Context().Value(custom.ProjectId).(string)
+
+	var news services.News
+	all, err := news.GetAllNewsByProjectId(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
 }

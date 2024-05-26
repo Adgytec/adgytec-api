@@ -107,7 +107,7 @@ type IndexedValue struct {
 func generatePresignedUrl(objectName string, ind int, wg *sync.WaitGroup, urlChan chan IndexedValue) {
 	defer wg.Done()
 
-	expires := time.Second * 60 * 60
+	expires := time.Second * 60 * 15
 	reqParams := make(url.Values)
 	presignedURL, err := spaceStorage.PresignedGetObject(context.Background(), os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, expires, reqParams)
 	if err != nil {

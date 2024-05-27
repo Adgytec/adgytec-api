@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"log"
@@ -26,6 +27,10 @@ type News struct {
 	Image string    `json:"image" db:"image"`
 	Id    string    `json:"id,omitempty" db:"news_id"`
 	Date  time.Time `json:"createdAt,omitempty" db:"created_at"`
+}
+
+type NewsImage struct {
+	Image string `db:"image"`
 }
 
 func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType string, wg *sync.WaitGroup, errChan chan error) {
@@ -77,8 +82,14 @@ func (n *News) CreateNewsItem(r *http.Request, projectId string) error {
 		return err
 	}
 
-	objectName := fmt.Sprintf("services/news/%v-%v.%v", n.Title, generateRandomString(), format)
+	objectName := fmt.Sprintf("services/news/%v/%v.%v", projectId, generateRandomString(), format)
+
+	if val := os.Getenv("ENV"); val == "dev" {
+		objectName = "dev/" + objectName
+	}
+
 	n.Image = objectName
+
 	wg := new(sync.WaitGroup)
 	errChan := make(chan error, 2)
 
@@ -104,10 +115,9 @@ type IndexedValue struct {
 	Url   string
 }
 
-func generatePresignedUrl(objectName string, ind int, wg *sync.WaitGroup, urlChan chan IndexedValue) {
+func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg *sync.WaitGroup, urlChan chan IndexedValue) {
 	defer wg.Done()
 
-	expires := time.Second * 60 * 15
 	reqParams := make(url.Values)
 	presignedURL, err := spaceStorage.PresignedGetObject(context.Background(), os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, expires, reqParams)
 	if err != nil {
@@ -125,8 +135,8 @@ func generatePresignedUrl(objectName string, ind int, wg *sync.WaitGroup, urlCha
 	}
 }
 
-func (n *News) GetAllNewsByProjectId(projectId string) (*[]News, error) {
-	args := dbqueries.GetAllNewsByProjectIdArgs(projectId)
+func (n *News) GetAllNewsByProjectId(projectId string, limit int) (*[]News, error) {
+	args := dbqueries.GetAllNewsByProjectIdArgs(projectId, limit)
 	rows, err := db.Query(ctx, dbqueries.GetAllNewsByProjectId, args)
 	if err != nil {
 		log.Printf("Error fetching news from db: %v\n", err)
@@ -142,12 +152,13 @@ func (n *News) GetAllNewsByProjectId(projectId string) (*[]News, error) {
 
 	wg := new(sync.WaitGroup)
 	urlChan := make(chan IndexedValue, len(news))
+	expires := time.Second * 60 * 10 // 10 mins
 
 	for ind, item := range news {
 		wg.Add(1)
 
 		img := item.Image
-		go generatePresignedUrl(img, ind, wg, urlChan)
+		go generatePresignedUrl(img, ind, expires, wg, urlChan)
 	}
 
 	wg.Wait()
@@ -159,4 +170,34 @@ func (n *News) GetAllNewsByProjectId(projectId string) (*[]News, error) {
 	}
 
 	return &news, nil
+}
+
+func (n *News) DeleteNews() error {
+	args := dbqueries.DeleteNewsByIdArgs(n.Id)
+	rows, err := db.Query(ctx, dbqueries.DeleteNewsById, args)
+	if err != nil {
+		log.Printf("Error deleting news from db: %v\n", err)
+		return err
+	}
+	defer rows.Close()
+
+	news, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NewsImage])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "News item not found"
+			return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+
+		}
+		log.Printf("Error reading rows: %v\n", err)
+		return err
+	}
+
+	// delete from space storage
+	err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), news.Image, minio.RemoveObjectOptions{})
+	if err != nil {
+		log.Printf("Error deleting image from space storage: %v\n", err)
+		return err
+	}
+
+	return nil
 }

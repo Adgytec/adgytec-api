@@ -52,7 +52,7 @@ func Router() *chi.Mux {
 		r.Use(middleware.ClientTokenAuthentication)
 		// endpoints here
 
-		r.Get("/services/news", controllers.GetAllNewsByProject)
+		r.Get("/services/news", controllers.GetAllNewsClient)
 	})
 
 	//dashboard endpoins for services
@@ -61,6 +61,9 @@ func Router() *chi.Mux {
 		r.Use(middleware.ServicesRoleAuthorization)
 
 		r.Post("/services/news/{projectId}", controllers.PostNews)
+		r.Get("/services/news/{projectId}", controllers.GetNews)
+		// r.Put("/services/news/{projectId}/{serviceId}")
+		r.Delete("/services/news/{projectId}/{serviceId}", controllers.DeleteNews)
 	})
 
 	return router

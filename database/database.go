@@ -13,7 +13,7 @@ import (
 var ctx context.Context = context.Background()
 
 const (
-	defaultMaxConns          = int32(4)
+	defaultMaxConns          = int32(20)
 	defaultMinConns          = int32(0)
 	defaultMaxConnLifetime   = time.Hour
 	defaultMaxConnIdleTime   = time.Minute * 30

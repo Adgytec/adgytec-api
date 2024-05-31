@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
@@ -31,6 +32,10 @@ type News struct {
 
 type NewsImage struct {
 	Image string `db:"image"`
+}
+
+type NewsDelete struct {
+	NewsId []string `json:"newsId,omitempty"`
 }
 
 func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType string, wg *sync.WaitGroup, errChan chan error) {
@@ -197,6 +202,67 @@ func (n *News) DeleteNews() error {
 	if err != nil {
 		log.Printf("Error deleting image from space storage: %v\n", err)
 		return err
+	}
+
+	return nil
+}
+
+func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
+	deleteAll := len(n.NewsId) == 0
+	var query string
+
+	if deleteAll {
+		query = dbqueries.DeleteNewsByProjectId(projectId)
+	} else {
+		query = dbqueries.DeleteMultipleNewsById(n.NewsId)
+	}
+
+	log.Println(query)
+
+	rows, err := db.Query(ctx, query)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid news id in request body."
+				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+		log.Printf("Error deleting news from db: %v\n", err)
+		return err
+	}
+	defer rows.Close()
+
+	news, err := pgx.CollectRows(rows, pgx.RowToStructByName[NewsImage])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return err
+	}
+
+	log.Println(news)
+	if len(news) == 0 {
+		return &custom.MalformedRequest{Status: http.StatusNotFound, Message: "News not found"}
+	}
+
+	log.Println("deleting from space storage")
+
+	objectChan := make(chan minio.ObjectInfo)
+	go func() {
+		defer close(objectChan)
+		for _, img := range news {
+			objectChan <- minio.ObjectInfo{Key: img.Image}
+		}
+	}()
+	e := spaceStorage.RemoveObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectChan, minio.RemoveObjectsOptions{})
+
+	isErr := false
+	for err := range e {
+		log.Printf("Error deleting objects in space storage, %v\n", err)
+		isErr = true
+	}
+
+	if isErr {
+		return errors.New("error deleting image from space storage")
 	}
 
 	return nil

@@ -64,6 +64,7 @@ func Router() *chi.Mux {
 		r.Get("/services/news/{projectId}", controllers.GetNews)
 		// r.Put("/services/news/{projectId}/{serviceId}")
 		r.Delete("/services/news/{projectId}/{serviceId}", controllers.DeleteNews)
+		r.Delete("/services/news/{projectId}", controllers.DeleteNewsMultiple)
 	})
 
 	return router

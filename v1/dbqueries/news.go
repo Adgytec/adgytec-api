@@ -1,6 +1,11 @@
 package dbqueries
 
-import "github.com/jackc/pgx/v5"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
+)
 
 // create news item
 const CreateNewsItem = `INSERT INTO news (title, link, text, image, project_id)
@@ -45,4 +50,20 @@ func DeleteNewsByIdArgs(newsId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"newsId": newsId,
 	}
+}
+
+func DeleteNewsByProjectId(projectId string) string {
+	query := fmt.Sprintf("DELETE FROM news WHERE project_id='%v' RETURNING image", projectId)
+	return query
+}
+
+func DeleteMultipleNewsById(newsId []string) string {
+	for i, val := range newsId {
+		newsId[i] = "'" + val + "'"
+	}
+	newsIdString := strings.Join(newsId, ", ")
+
+	query := fmt.Sprintf("DELETE FROM news WHERE news_id IN (%v) RETURNING image", newsIdString)
+
+	return query
 }

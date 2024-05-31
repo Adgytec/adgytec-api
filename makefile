@@ -4,7 +4,7 @@ run:
 	go run cmd/server/main.go cmd/server/init.go
 
 build:
-	go build cmd/server/main.go cmd/server/init.go
+	go build -o /go/bin/app -v ./cmd/server/main.go ./cmd/server/init.go
 
 test:
 	go test -v ./...

@@ -115,3 +115,24 @@ func DeleteNews(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
+
+func DeleteNewsMultiple(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+	newsId, err := helper.DecodeJSON[services.NewsDelete](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	err = newsId.DeleteNewsMultiple(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully deleted news"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}

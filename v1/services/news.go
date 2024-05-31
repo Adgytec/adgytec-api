@@ -38,6 +38,13 @@ type NewsDelete struct {
 	NewsId []string `json:"newsId,omitempty"`
 }
 
+type NewsPut struct {
+	Title string `json:"title,omitempty"`
+	Link  string `json:"link,omitempty"`
+	Text  string `json:"text,omitempty"`
+	Id    string `json:"-"`
+}
+
 func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType string, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 
@@ -217,8 +224,6 @@ func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 		query = dbqueries.DeleteMultipleNewsById(n.NewsId)
 	}
 
-	log.Println(query)
-
 	rows, err := db.Query(ctx, query)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -244,8 +249,6 @@ func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 		return &custom.MalformedRequest{Status: http.StatusNotFound, Message: "News not found"}
 	}
 
-	log.Println("deleting from space storage")
-
 	objectChan := make(chan minio.ObjectInfo)
 	go func() {
 		defer close(objectChan)
@@ -266,4 +269,15 @@ func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 	}
 
 	return nil
+}
+
+func (n *NewsPut) NewsUpdate() error {
+	query := dbqueries.UpdateNewsById(n.Id, n.Title, n.Link, n.Text)
+
+	_, err := db.Exec(ctx, query)
+	if err != nil {
+		log.Printf("Error updating user in database: %v\n", err)
+	}
+
+	return err
 }

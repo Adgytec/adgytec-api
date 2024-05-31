@@ -136,3 +136,36 @@ func DeleteNewsMultiple(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
+
+func PutNews(w http.ResponseWriter, r *http.Request) {
+	serviceId := chi.URLParam(r, "serviceId")
+
+	newsDetails, err := helper.DecodeJSON[services.NewsPut](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	if newsDetails.Link == "" && newsDetails.Text == "" && newsDetails.Title == "" {
+		message := "request body is empty"
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	newsDetails.Id = serviceId
+	err = newsDetails.NewsUpdate()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = fmt.Sprintf("Successfully updated news with id: %v", serviceId)
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}

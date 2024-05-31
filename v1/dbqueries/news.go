@@ -67,3 +67,29 @@ func DeleteMultipleNewsById(newsId []string) string {
 
 	return query
 }
+
+// update news
+func UpdateNewsById(newsId, title, link, text string) string {
+	var columns []string
+	if len(title) != 0 {
+		title = "title='" + title + "'"
+		columns = append(columns, title)
+	}
+	if len(link) != 0 {
+		link = "link='" + link + "'"
+		columns = append(columns, link)
+	}
+	if len(text) != 0 {
+		text = "text='" + text + "'"
+		columns = append(columns, text)
+	}
+
+	columnsString := strings.Join(columns, ", ")
+	query := fmt.Sprintf(`
+		UPDATE news
+		SET %v
+		WHERE news_id='%v'
+	`, columnsString, newsId)
+
+	return query
+}

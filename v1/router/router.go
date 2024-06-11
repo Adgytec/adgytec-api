@@ -26,7 +26,7 @@ func Router() *chi.Mux {
 
 	// user module
 	router.Group(func(r chi.Router) {
-		r.Use(middleware.TokenAuthetication)
+		r.Use(middleware.TokenAuthentication)
 		r.Use(middleware.UserRoleAuthorization)
 
 		r.Post("/user", controllers.PostUser)
@@ -38,7 +38,7 @@ func Router() *chi.Mux {
 
 	// project module
 	router.Group(func(r chi.Router) {
-		r.Use(middleware.TokenAuthetication)
+		r.Use(middleware.TokenAuthentication)
 		r.Use(middleware.AdminRoleAuthorization)
 
 		r.Post("/project", controllers.PostProject)
@@ -57,7 +57,7 @@ func Router() *chi.Mux {
 
 	//dashboard endpoins for services
 	router.Group(func(r chi.Router) {
-		r.Use(middleware.TokenAuthetication)
+		r.Use(middleware.TokenAuthentication)
 		r.Use(middleware.ServicesRoleAuthorization)
 
 		r.Post("/services/news/{projectId}", controllers.PostNews)

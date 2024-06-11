@@ -85,7 +85,7 @@ func ClientTokenAuthentication(next http.Handler) http.Handler {
 	})
 }
 
-func TokenAuthetication(next http.Handler) http.Handler {
+func TokenAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// check for authorization header
 		authHeader := r.Header.Get("Authorization")
@@ -209,7 +209,7 @@ func UserRoleAuthorization(next http.Handler) http.Handler {
 
 				userToDeleteRole := u.CustomClaims["role"]
 
-				if userRole != "super_admin" && userRole == userToDeleteRole {
+				if userRole != "super_admin" && (userToDeleteRole == "super_admin" || userRole == userToDeleteRole) {
 					message := "Insufficient privileges to perform requested action."
 					err := &custom.MalformedRequest{Status: http.StatusForbidden, Message: message}
 					helper.HandleError(w, err)

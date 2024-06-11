@@ -1,5 +1,7 @@
 package validation
 
+import "regexp"
+
 const (
 	superAdmin string = "super_admin"
 	admin      string = "admin"
@@ -25,6 +27,8 @@ func AuthorizeRole(myRole, role string) bool {
 }
 
 func ValidateName(name string) bool {
+	regex := `^[a-zA-Z]+(?:[' -][a-zA-Z]+)*$`
+	match, _ := regexp.MatchString(regex, name)
 	// checking if name is empty or not
-	return len(name) >= 3
+	return match && len(name) >= 3
 }

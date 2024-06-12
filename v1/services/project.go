@@ -1,18 +1,30 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
 )
 
 type Project struct {
-	ProjectName string `json:"projectName" db:"project_name"`
+	ProjectName string    `json:"projectName" db:"project_name"`
+	Id          string    `json:"projectId,omitempty" db:"project_id"`
+	CreatedAt   time.Time `json:"createdAt,omitempty" db:"created_at"`
+}
+
+type ProjectDetail struct {
+	Name      string          `json:"projectName" db:"name"`
+	CreatedAt time.Time       `json:"createdAt" db:"created_at"`
+	Users     json.RawMessage `json:"users" db:"users"`
+	Token     string          `json:"publicToken" db:"token"`
 }
 
 type ProjectUserMap struct {
@@ -47,6 +59,45 @@ func (p *Project) CreateProject() (string, error) {
 	}
 
 	return clientToken, nil
+}
+
+func (p *Project) GetAllProjects() (*[]Project, error) {
+	rows, err := db.Query(ctx, dbqueries.GetAllProjects)
+	if err != nil {
+		log.Printf("Error fetching projects from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	projects, err := pgx.CollectRows(rows, pgx.RowToStructByName[Project])
+	if err != nil {
+		log.Printf("Error reading rows: %v", err)
+		return nil, err
+	}
+
+	return &projects, err
+}
+
+func (p *Project) GetProjectById() (*ProjectDetail, error) {
+	args := dbqueries.GetProjectDetailsByIdArgs(p.Id)
+	rows, err := db.Query(ctx, dbqueries.GetProjectDetailsById, args)
+	if err != nil {
+		log.Printf("Error fetching project details from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ProjectDetail])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "Project with the provided ID does not exist."
+			return nil, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+		}
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	return &project, err
 }
 
 func (ps *ProjectServiceMap) CreateProjectServiceMap(projectId string) error {

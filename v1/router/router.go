@@ -44,6 +44,8 @@ func Router() *chi.Mux {
 		r.Post("/project", controllers.PostProject)
 		r.Post("/project/{projectId}/services", controllers.PostProjectAndServices)
 		r.Post("/project/{projectId}/user", controllers.PostProjectAndUser)
+		r.Get("/projects", controllers.GetAllProjects)
+		r.Get("/project/{projectId}", controllers.GetProjectById)
 	})
 
 	// services

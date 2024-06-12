@@ -78,3 +78,39 @@ func PostProjectAndUser(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }
+
+func GetAllProjects(w http.ResponseWriter, r *http.Request) {
+	var projects services.Project
+
+	all, err := projects.GetAllProjects()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}
+
+func GetProjectById(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+	var project services.Project
+	project.Id = projectId
+
+	p, err := project.GetProjectById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = p
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}

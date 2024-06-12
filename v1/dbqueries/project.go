@@ -55,7 +55,7 @@ func AddUserToProjectArgs(userId, projectId string) pgx.NamedArgs {
 }
 
 // get project id  by token
-const GetProjectIdByClientToken = `select project_id from client_token where token=@clientToken`
+const GetProjectIdByClientToken = `SELECT project_id FROM client_token WHERE token=@clientToken`
 
 func GetProjectIdByClientTokenArgs(clientToken string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -63,17 +63,47 @@ func GetProjectIdByClientTokenArgs(clientToken string) pgx.NamedArgs {
 	}
 }
 
-const GetProjectIdByUserId = `select project_id from user_to_project where user_id=@userId`
+// auth to check if the user has rights to perform action in that project
+const GetProjectIdByUserIdAndProjectId = `SELECT project_id FROM user_to_project WHERE user_id=@userId AND project_id=@projectId`
 
-func GetProjectIdByUserIdArgs(userId string) pgx.NamedArgs {
+func GetProjectIdByUserIdAndProjectIdArgs(userId, projectId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
-		"userId": userId,
+		"userId":    userId,
+		"projectId": projectId,
 	}
 }
 
-const GetProjectById = `select project_name from project where project_id=@projectId`
+// to check if project exists or not
+const GetProjectById = `SELECT * FROM project WHERE project_id=@projectId`
 
 func GetProjectByIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
+}
+
+// get all project
+const GetAllProjects = `SELECT * FROM project`
+
+// get project by id
+const GetProjectDetailsById = `
+SELECT
+  p.project_name as name,
+  p.created_at,
+  coalesce(ud.user_data, '[]'::json) AS users,
+  c.token
+FROM project p
+INNER JOIN (
+  SELECT json_agg(json_build_object('id', up.user_id, 'name', u.name, 'email', u.email)) AS user_data
+  FROM user_to_project up
+  INNER JOIN users u ON up.user_id = u.user_id
+  WHERE up.project_id = @projectId
+) ud ON 1=1 
+INNER JOIN client_token c ON p.project_id = c.project_id
+WHERE p.project_id = @projectId;
+`
+
+func GetProjectDetailsByIdArgs(projectId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 	}

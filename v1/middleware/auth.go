@@ -274,8 +274,8 @@ func ServicesRoleAuthorization(next http.Handler) http.Handler {
 		}
 
 		// check for user project
-		args = dbqueries.GetProjectIdByUserIdArgs(userId)
-		rows, err = database.DB.Query(ctx, dbqueries.GetProjectIdByUserId, args)
+		args = dbqueries.GetProjectIdByUserIdAndProjectIdArgs(userId, projectId)
+		rows, err = database.DB.Query(ctx, dbqueries.GetProjectIdByUserIdAndProjectId, args)
 		if err != nil {
 			log.Printf("Error fetching project id from db: %v\n", err)
 			helper.HandleError(w, err)
@@ -283,10 +283,10 @@ func ServicesRoleAuthorization(next http.Handler) http.Handler {
 		}
 		defer rows.Close()
 
-		project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ClientToken])
+		_, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[ClientToken])
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				message := "Current user is not associated with any project."
+				message := "Insufficient privileges to perform requested action."
 				helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message})
 				return
 			}
@@ -295,11 +295,11 @@ func ServicesRoleAuthorization(next http.Handler) http.Handler {
 			return
 		}
 
-		if project.ProjectId != projectId {
-			message := "Insufficient privileges to perform requested action."
-			helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message})
-			return
-		}
+		// if project.ProjectId != projectId {
+		// 	message := "Insufficient privileges to perform requested action."
+		// 	helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusUnauthorized, Message: message})
+		// 	return
+		// }
 
 		next.ServeHTTP(w, r)
 	})

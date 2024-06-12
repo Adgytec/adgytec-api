@@ -32,6 +32,16 @@ func (p *Project) CreateProject() (string, error) {
 	args := dbqueries.CreateProjectArgs(p.ProjectName, clientToken)
 	_, err = db.Exec(ctx, dbqueries.CreateProject, args)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			// unique project name voilation
+			if pgErr.Code == "23505" {
+				message := "A project with that name already exists."
+				return "", &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+
 		log.Printf("Error adding project in database: %v\n", err)
 		return "", err
 	}

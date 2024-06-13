@@ -36,6 +36,11 @@ type ProjectServiceMap struct {
 	Services []string `json:"services"`
 }
 
+type ServicesDetails struct {
+	Name string `json:"serviceName" db:"service_name"`
+	Id   string `json:"serviceId" db:"service_id"`
+}
+
 func (p *Project) CreateProject() (string, error) {
 	clientToken, err := generateSecureToken()
 	if err != nil {
@@ -112,6 +117,23 @@ func (p *Project) DeleteProjectById() error {
 	return nil
 }
 
+func (p *Project) GetAllServices() (*[]ServicesDetails, error) {
+	rows, err := db.Query(ctx, dbqueries.GetAllServices)
+	if err != nil {
+		log.Printf("Error fetching services from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	services, err := pgx.CollectRows(rows, pgx.RowToStructByName[ServicesDetails])
+	if err != nil {
+		log.Printf("Error reading rows: %v", err)
+		return nil, err
+	}
+
+	return &services, err
+}
+
 func (ps *ProjectServiceMap) CreateProjectServiceMap(projectId string) error {
 	query := dbqueries.AddServicesToProject(projectId, ps.Services)
 	_, err := db.Exec(ctx, query)
@@ -136,6 +158,26 @@ func (ps *ProjectServiceMap) CreateProjectServiceMap(projectId string) error {
 		}
 
 		log.Printf("Error adding services to project: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func (ps *ProjectServiceMap) DeleteProjectServiceMap(projectId string) error {
+	args := dbqueries.DeleteServiceFromProjectArgs(ps.Services[0], projectId)
+	_, err := db.Exec(ctx, dbqueries.DeleteServiceFromProject, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid project id or service id."
+				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+
+		log.Printf("Error removing service from project: %v\n", err)
 		return err
 	}
 

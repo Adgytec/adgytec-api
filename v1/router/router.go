@@ -46,8 +46,11 @@ func Router() *chi.Mux {
 		r.Post("/project/{projectId}/user", controllers.PostProjectAndUser)
 		r.Get("/projects", controllers.GetAllProjects)
 		r.Get("/project/{projectId}", controllers.GetProjectById)
+		r.Get("/services", controllers.GetAllServices)
 		r.Delete("/project/{projectId}", controllers.DeleteProjectById)
 		r.Delete("/project/{projectId}/user", controllers.DeleteProjectAndUser)
+		r.Delete("/project/{projectId}/services", controllers.DeleteProjectAndService)
+
 	})
 
 	// services

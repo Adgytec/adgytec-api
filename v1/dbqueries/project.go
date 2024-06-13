@@ -130,7 +130,8 @@ func DeleteProjectByIdArgs(projectId string) pgx.NamedArgs {
 
 // remove user project map
 const DeleteUserFromProject = `
-DELETE FROM user_to_project WHERE user_id = @userId AND project_id = @projectId
+DELETE FROM user_to_project 
+WHERE user_id = @userId AND project_id = @projectId
 `
 
 func DeleteUserFromProjectArgs(userId, projectId string) pgx.NamedArgs {
@@ -139,3 +140,21 @@ func DeleteUserFromProjectArgs(userId, projectId string) pgx.NamedArgs {
 		"projectId": projectId,
 	}
 }
+
+// remove service project map
+const DeleteServiceFromProject = `
+DELETE FROM project_to_service 
+WHERE service_id = @serviceId AND project_id = @projectId
+`
+
+func DeleteServiceFromProjectArgs(serviceId, projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"serviceId": serviceId,
+		"projectId": projectId,
+	}
+}
+
+// get all services
+const GetAllServices = `
+SELECT service_name, service_id FROM services
+`

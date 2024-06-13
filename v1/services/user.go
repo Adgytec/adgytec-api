@@ -281,11 +281,8 @@ func deleteUserFromFirebase(userId string, wg *sync.WaitGroup, errchan chan erro
 	err := firebaseClient.DeleteUser(ctx, userId)
 	if err != nil {
 		log.Printf("Error deleting user from firebase: %v\n", err)
-		errchan <- err
-		return
 	}
-
-	errchan <- nil
+	errchan <- err
 }
 
 func deleteUserFromDatabase(userId string, wg *sync.WaitGroup, errchan chan error) {
@@ -297,11 +294,8 @@ func deleteUserFromDatabase(userId string, wg *sync.WaitGroup, errchan chan erro
 	_, err := db.Exec(ctx, dbqueries.DeleteUser, args)
 	if err != nil {
 		log.Printf("Error deleting user in database: %v\n", err)
-		errchan <- err
-		return
 	}
-
-	errchan <- nil
+	errchan <- err
 }
 
 // delete user
@@ -350,9 +344,8 @@ func (u *User) GetUserById() (*User, error) {
 	return &user, nil
 }
 
-func (u *User) GetAllUsers(cursor int) (*[]User, error) {
-	args := dbqueries.GetUsersArgs(cursor)
-	rows, err := db.Query(ctx, dbqueries.GetUsers, args)
+func (u *User) GetAllUsers() (*[]User, error) {
+	rows, err := db.Query(ctx, dbqueries.GetUsers)
 	if err != nil {
 		log.Printf("Error fetching user from db: %v\n", err)
 		return nil, err

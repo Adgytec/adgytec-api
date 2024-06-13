@@ -114,3 +114,44 @@ func GetProjectById(w http.ResponseWriter, r *http.Request) {
 	helper.EncodeJSON(w, http.StatusOK, payload)
 
 }
+
+func DeleteProjectById(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+	var project services.Project
+	project.Id = projectId
+
+	err := project.DeleteProjectById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = fmt.Sprintf("Successfully deleted project with id: %v", projectId)
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func DeleteProjectAndUser(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+
+	user, err := helper.DecodeJSON[services.ProjectUserMap](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	err = user.DeleteUserProjectMap(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = fmt.Sprintf("Successfuly removed user-id: %v from project-id: %s", user.UserId, projectId)
+
+	helper.EncodeJSON(w, http.StatusCreated, payload)
+
+}

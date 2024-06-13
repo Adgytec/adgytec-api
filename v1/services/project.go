@@ -101,6 +101,17 @@ func (p *Project) GetProjectById() (*ProjectDetail, error) {
 	return &project, err
 }
 
+func (p *Project) DeleteProjectById() error {
+	args := dbqueries.DeleteProjectByIdArgs(p.Id)
+	_, err := db.Exec(ctx, dbqueries.DeleteProjectById, args)
+	if err != nil {
+		log.Printf("Error deleting project from db: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
 func (ps *ProjectServiceMap) CreateProjectServiceMap(projectId string) error {
 	query := dbqueries.AddServicesToProject(projectId, ps.Services)
 	_, err := db.Exec(ctx, query)
@@ -150,12 +161,32 @@ func (pu *ProjectUserMap) CreateUserProjectMap(projectId string) error {
 			}
 
 			if pgErr.Code == "22P02" {
-				message := "Invalid project id."
+				message := "Invalid project id or user id."
 				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
 			}
 		}
 
-		log.Printf("Error adding services to project: %v\n", err)
+		log.Printf("Error adding user to project: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func (pu *ProjectUserMap) DeleteUserProjectMap(projectId string) error {
+	args := dbqueries.DeleteUserFromProjectArgs(pu.UserId, projectId)
+	_, err := db.Exec(ctx, dbqueries.DeleteUserFromProject, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid project id or user id."
+				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+
+		log.Printf("Error removing user from project: %v\n", err)
 		return err
 	}
 

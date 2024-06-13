@@ -115,3 +115,27 @@ func GetProjectDetailsByIdArgs(projectId string) pgx.NamedArgs {
 		"projectId": projectId,
 	}
 }
+
+// delete project
+const DeleteProjectById = `
+DELETE FROM project 
+WHERE project_id = @projectId
+`
+
+func DeleteProjectByIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
+}
+
+// remove user project map
+const DeleteUserFromProject = `
+DELETE FROM user_to_project WHERE user_id = @userId AND project_id = @projectId
+`
+
+func DeleteUserFromProjectArgs(userId, projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"userId":    userId,
+		"projectId": projectId,
+	}
+}

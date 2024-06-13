@@ -90,7 +90,8 @@ const GetProjectDetailsById = `
 SELECT
   p.project_name as name,
   p.created_at,
-  coalesce(ud.user_data, '[]'::json) AS users,
+  coalesce(ud.user_data, '[]'::json) AS user_data,
+  coalesce(s.service_data, '[]'::json) as service_data,
   c.token
 FROM project p
 INNER JOIN (
@@ -99,6 +100,12 @@ INNER JOIN (
   INNER JOIN users u ON up.user_id = u.user_id
   WHERE up.project_id = @projectId
 ) ud ON 1=1 
+INNER JOIN (
+	SELECt json_agg(json_build_object('id', sp.service_id, 'name', s.service_name)) AS service_data
+	FROM services s 
+	INNER JOIN project_to_service sp ON sp.service_id = s.service_id
+	WHERE sp.project_id=@projectId
+) s ON 1=1
 INNER JOIN client_token c ON p.project_id = c.project_id
 WHERE p.project_id = @projectId;
 `

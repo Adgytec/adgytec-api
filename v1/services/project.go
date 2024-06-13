@@ -23,7 +23,8 @@ type Project struct {
 type ProjectDetail struct {
 	Name      string          `json:"projectName" db:"name"`
 	CreatedAt time.Time       `json:"createdAt" db:"created_at"`
-	Users     json.RawMessage `json:"users" db:"users"`
+	Users     json.RawMessage `json:"users" db:"user_data"`
+	Services  json.RawMessage `json:"services" db:"service_data"`
 	Token     string          `json:"publicToken" db:"token"`
 }
 

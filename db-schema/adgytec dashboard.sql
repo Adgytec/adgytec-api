@@ -44,6 +44,10 @@ ALTER TABLE "project_to_service" ADD FOREIGN KEY ("service_id") REFERENCES "serv
 
 ALTER TABLE "client_token" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
 
+ALTER TABLE "user_to_project" ADD PRIMARY KEY ("user_id", "project_id");
+
+ALTER TABLE "project_to_service" ADD PRIMARY KEY ("service_id", "project_id");
+
 
 /* 
     service schema

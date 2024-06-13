@@ -155,6 +155,12 @@ func (ps *ProjectServiceMap) CreateProjectServiceMap(projectId string) error {
 				message := "Invalid project id or service."
 				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
 			}
+
+			// composite key violation
+			if pgErr.Code == "23505" {
+				message := "The selected services are already included in this project."
+				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
 		}
 
 		log.Printf("Error adding services to project: %v\n", err)
@@ -204,6 +210,12 @@ func (pu *ProjectUserMap) CreateUserProjectMap(projectId string) error {
 
 			if pgErr.Code == "22P02" {
 				message := "Invalid project id or user id."
+				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+
+			// composite key violation
+			if pgErr.Code == "23505" {
+				message := "It looks like this user is already associated with the project."
 				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
 			}
 		}

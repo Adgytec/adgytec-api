@@ -83,7 +83,7 @@ func GetProjectByIdArgs(projectId string) pgx.NamedArgs {
 }
 
 // get all project
-const GetAllProjects = `SELECT * FROM project`
+const GetAllProjects = `SELECT project_id, project_name, created_at FROM project`
 
 // get project by id
 const GetProjectDetailsById = `
@@ -158,3 +158,38 @@ func DeleteServiceFromProjectArgs(serviceId, projectId string) pgx.NamedArgs {
 const GetAllServices = `
 SELECT service_name, service_id FROM services
 `
+
+// get project by user id
+const GetProjectByUserId = `
+	SELECT p.project_name, p.project_id, p.created_at
+	FROM project p
+	LEFT JOIN user_to_project up
+	ON p.project_id = up.project_id
+	WHERE up.user_id = @userId
+`
+
+func GetProjectByUserIdArgs(userId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"userId": userId,
+	}
+}
+
+// get services by project id
+const GetServicesByProjectId = `
+select p.project_name, coalesce(sd.service_data, '[]'::json) as services_data
+from project p
+inner join (
+	select json_agg(json_build_object('id', s.service_id, 'name', s.service_name)) as service_data
+	from services s
+	left join project_to_service ps
+	on s.service_id = ps.service_id
+	where ps.project_id = @projectId
+) sd on 1=1
+where p.project_id = @projectId
+`
+
+func GetServicesByProjectIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
+}

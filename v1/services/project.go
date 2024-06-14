@@ -41,6 +41,12 @@ type ServicesDetails struct {
 	Id   string `json:"serviceId" db:"service_id"`
 }
 
+type ServicesByProject struct {
+	Name     string          `json:"projectName" db:"project_name"`
+	Services json.RawMessage `json:"services" db:"services_data"`
+}
+
+// admin only
 func (p *Project) CreateProject() (string, error) {
 	clientToken, err := generateSecureToken()
 	if err != nil {
@@ -99,6 +105,15 @@ func (p *Project) GetProjectById() (*ProjectDetail, error) {
 			message := "Project with the provided ID does not exist."
 			return nil, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
 		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid project id or service."
+				return nil, &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+
 		log.Printf("Error reading rows: %v\n", err)
 		return nil, err
 	}
@@ -245,4 +260,54 @@ func (pu *ProjectUserMap) DeleteUserProjectMap(projectId string) error {
 	}
 
 	return nil
+}
+
+// admin and user
+func (p *Project) GetProjectsByUserId(userId string) (*[]Project, error) {
+	args := dbqueries.GetProjectByUserIdArgs(userId)
+	rows, err := db.Query(ctx, dbqueries.GetProjectByUserId, args)
+	if err != nil {
+		log.Printf("Error fetching projects from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	project, err := pgx.CollectRows(rows, pgx.RowToStructByName[Project])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	return &project, err
+}
+
+func (p *Project) GetServicesByProjectId() (*ServicesByProject, error) {
+	args := dbqueries.GetServicesByProjectIdArgs(p.Id)
+	rows, err := db.Query(ctx, dbqueries.GetServicesByProjectId, args)
+	if err != nil {
+		log.Printf("Error fetching project details from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ServicesByProject])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "Project with the provided ID does not exist."
+			return nil, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid project id"
+				return nil, &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	return &project, err
 }

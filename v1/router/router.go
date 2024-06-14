@@ -36,7 +36,7 @@ func Router() *chi.Mux {
 		r.Get("/users", controllers.GetAllUsers)
 	})
 
-	// project module
+	// project module admin only routes
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthentication)
 		r.Use(middleware.AdminRoleAuthorization)
@@ -50,7 +50,14 @@ func Router() *chi.Mux {
 		r.Delete("/project/{projectId}", controllers.DeleteProjectById)
 		r.Delete("/project/{projectId}/user", controllers.DeleteProjectAndUser)
 		r.Delete("/project/{projectId}/services", controllers.DeleteProjectAndService)
+	})
 
+	// project module user
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.TokenAuthentication)
+
+		r.Get("/client/projects", controllers.GetProjectsByUserId)
+		r.Get("/client/projects/{projectId}/services", controllers.GetServicesByProjectId)
 	})
 
 	// services

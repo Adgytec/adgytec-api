@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/rohan031/adgytec-api/helper"
+	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/services"
 )
 
@@ -190,6 +191,49 @@ func GetAllServices(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func GetProjectsByUserId(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value(custom.UserID).(string)
+	userRole := r.Context().Value(custom.UserRole).(string)
+	var project services.Project
+	var all *[]services.Project
+	var err error
+
+	if userRole != "user" {
+		all, err = project.GetAllProjects()
+	} else {
+		all, err = project.GetProjectsByUserId(userId)
+	}
+
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func GetServicesByProjectId(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+	var project services.Project
+	project.Id = projectId
+
+	data, err := project.GetServicesByProjectId()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = data
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

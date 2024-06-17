@@ -150,6 +150,7 @@ func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg 
 func (n *News) GetAllNewsByProjectId(projectId string, limit int) (*[]News, error) {
 	args := dbqueries.GetAllNewsByProjectIdArgs(projectId, limit)
 	rows, err := db.Query(ctx, dbqueries.GetAllNewsByProjectId, args)
+
 	if err != nil {
 		log.Printf("Error fetching news from db: %v\n", err)
 		return nil, err
@@ -219,7 +220,8 @@ func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 	var query string
 
 	if deleteAll {
-		query = dbqueries.DeleteNewsByProjectId(projectId)
+		// query = dbqueries.DeleteNewsByProjectId(projectId)
+		return &custom.MalformedRequest{Status: http.StatusServiceUnavailable, Message: "This method is not available for the time being"}
 	} else {
 		query = dbqueries.DeleteMultipleNewsById(n.NewsId)
 	}

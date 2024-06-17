@@ -247,7 +247,7 @@ func ServicesRoleAuthorization(next http.Handler) http.Handler {
 
 		// check if project exists
 		args := dbqueries.GetProjectByIdArgs(projectId)
-		rows, err := database.DB.Query(ctx, dbqueries.GetProjectById, args)
+		rows, err := database.DB.Query(ctx, dbqueries.GetProjectNameById, args)
 		if err != nil {
 			log.Printf("Error fetching project id from db: %v\n", err)
 			helper.HandleError(w, err)

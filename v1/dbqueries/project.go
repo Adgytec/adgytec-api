@@ -74,6 +74,8 @@ func GetProjectIdByUserIdAndProjectIdArgs(userId, projectId string) pgx.NamedArg
 }
 
 // to check if project exists or not
+const GetProjectNameById = `SELECT project_name FROM project WHERE project_id=@projectId`
+
 const GetProjectById = `SELECT * FROM project WHERE project_id=@projectId`
 
 func GetProjectByIdArgs(projectId string) pgx.NamedArgs {

@@ -22,10 +22,12 @@ func CreateNewsItemArgs(title, link, text, image, projectId string) pgx.NamedArg
 }
 
 // get all news
-const GetAllNewsByProjectId = `SELECT news_id, title, link, text, image, created_at FROM news
+const GetAllNewsByProjectId = `
+SELECT news_id, title, link, text, image, created_at FROM news
 WHERE project_id=@projectId
 ORDER BY created_at DESC
-LIMIT @limit`
+LIMIT @limit
+`
 
 func GetAllNewsByProjectIdArgs(projectId string, limit int) pgx.NamedArgs {
 	return pgx.NamedArgs{

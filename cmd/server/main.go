@@ -12,7 +12,7 @@ func main() {
 	// loading environment variables from .env
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Error loading .env file")
+		log.Printf("error loading env file: %v\n", err)
 	}
 
 	PORT := "8080"

@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -50,7 +49,7 @@ func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType
 
 	_, err := spaceStorage.PutObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, buf, int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
-		log.Printf("failed to upload file: %v", err)
+		log.Printf("failed to upload image: %v", err)
 	}
 	errChan <- err
 }
@@ -67,14 +66,14 @@ func addNewsToDatabase(n *News, projectId string, wg *sync.WaitGroup, errChan ch
 }
 
 func (n *News) CreateNewsItem(r *http.Request, projectId string) error {
-	file, handler, err := r.FormFile("image")
+	file, header, err := r.FormFile("image")
 	if err != nil {
 		log.Printf("Error retriving file: %v\n ", err)
 		return err
 	}
 	defer file.Close()
 
-	contentType := handler.Header.Get("Content-type")
+	contentType := header.Header.Get("Content-type")
 	if !strings.HasPrefix(contentType, "image/") {
 		return (&custom.MalformedRequest{
 			Status:  http.StatusUnsupportedMediaType,
@@ -131,9 +130,14 @@ func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg 
 	defer wg.Done()
 
 	reqParams := make(url.Values)
-	presignedURL, err := spaceStorage.PresignedGetObject(context.Background(), os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, expires, reqParams)
+	presignedURL, err := spaceStorage.PresignedGetObject(ctx,
+		os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
+		objectName,
+		expires,
+		reqParams,
+	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Printf("error generating presigned url for the image: %v\n", err)
 		urlChan <- IndexedValue{
 			Index: ind,
 			Url:   "",
@@ -165,7 +169,6 @@ func (n *News) GetAllNewsByProjectId(projectId string, limit int) (*[]News, erro
 
 	wg := new(sync.WaitGroup)
 	urlChan := make(chan IndexedValue, len(news))
-	expires := time.Second * 60 * 10 // 10 mins
 
 	for ind, item := range news {
 		wg.Add(1)

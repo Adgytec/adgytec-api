@@ -65,3 +65,20 @@ CREATE TABLE "news" (
 );
 
 ALTER TABLE "news" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+
+/* blogs */
+CREATE TABLE "blogs" (
+  "blog_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "user_id" varchar NOT NULL,
+  "project_id" uuid NOT NULL,
+  "author" varchar NOT NULL,
+  "title" varchar NOT NULL,
+  "cover_image" varchar NOT NULL,
+  "short_text" varchar,
+  "content" varchar NOT NULL,
+  "created_at" timestamp DEFAULT (now()),
+  "updated_at" timestamp DEFAULT (now())
+);
+
+ALTER TABLE "blogs" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "blogs" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;

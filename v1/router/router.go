@@ -69,16 +69,28 @@ func Router() *chi.Mux {
 		r.Get("/services/news", controllers.GetAllNewsClient)
 	})
 
+	// getting uuid
+	router.Group(func(r chi.Router) {
+		r.Use(middleware.TokenAuthentication)
+
+		r.Get("/uuid", controllers.GetUUID)
+	})
+
 	//dashboard endpoins for services
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthentication)
 		r.Use(middleware.ServicesRoleAuthorization)
 
+		// news
 		r.Post("/services/news/{projectId}", controllers.PostNews)
 		r.Get("/services/news/{projectId}", controllers.GetNews)
 		r.Put("/services/news/{projectId}/{serviceId}", controllers.PutNews)
 		r.Delete("/services/news/{projectId}/{serviceId}", controllers.DeleteNews)
 		r.Delete("/services/news/{projectId}", controllers.DeleteNewsMultiple)
+
+		// blogs
+		r.Post("/services/blogs/{projectId}/{blogId}", controllers.PostImage)
+		r.Delete("/services/blogs/{projectId}/{blogId}/clean-up", controllers.DeleteMedia)
 	})
 
 	return router

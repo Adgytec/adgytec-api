@@ -12,6 +12,7 @@ import (
 	mathRand "math/rand/v2"
 	"net/http"
 	"strings"
+	"time"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,6 +25,8 @@ var db *pgxpool.Pool
 var ctx context.Context = context.Background()
 var spaceStorage *minio.Client
 var firebaseClient *auth.Client
+
+var expires time.Duration = time.Second * 60 * 60 // 1hr
 
 func SetExternalConnection(pool *pgxpool.Pool, storage *minio.Client, client *auth.Client) {
 	db = pool

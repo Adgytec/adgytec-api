@@ -169,5 +169,21 @@ func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBlogById(w http.ResponseWriter, r *http.Request) {
+	blogId := chi.URLParam(r, "blogId")
 
+	var blogData services.Blog
+	blogData.Id = blogId
+
+	blog, err := blogData.GetBlogById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+
+	payload.Error = false
+	payload.Data = blog
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
+	"golang.org/x/net/html"
 )
 
 type FileMetaData struct {
@@ -237,4 +238,88 @@ func (b *Blog) GetBlogsByProjectId(projectId string) (*[]BlogSummary, error) {
 	}
 
 	return &blogs, nil
+}
+
+func (b *Blog) GetBlogById() (*Blog, error) {
+	args := dbqueries.GetBlogsByIdArgs(b.Id)
+	rows, err := db.Query(ctx, dbqueries.GetBlogById, args)
+	if err != nil {
+		log.Printf("Error fetching blog from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	blog, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Blog])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "Blog with the provided ID does not exist."
+			return nil, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+		}
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	// copied will reread it
+	doc, err := html.Parse(bytes.NewReader([]byte(blog.Content)))
+	if err != nil {
+		return nil, err
+	}
+
+	var updateImgTags func(*html.Node)
+	updateImgTags = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "img" {
+			var dataKey string
+			for i := 0; i < len(n.Attr); i++ {
+				if n.Attr[i].Key == "data-path" {
+					dataKey = n.Attr[i].Val
+					n.Attr = append(n.Attr[:i], n.Attr[i+1:]...) // Remove data-key attribute
+					break
+				}
+			}
+			if dataKey != "" {
+				// Generate presigned URL
+				isPresigned := true
+				presignedURL, err := spaceStorage.PresignedGetObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), dataKey, time.Hour, nil)
+				if err != nil {
+					log.Printf("Can't genrate url for image: %v\n", err)
+					isPresigned = false
+
+				}
+				// Add or update src attribute
+				hasSrc := false
+				for i := 0; i < len(n.Attr); i++ {
+					if n.Attr[i].Key == "src" {
+						if isPresigned {
+							n.Attr[i].Val = presignedURL.String()
+						} else {
+							n.Attr[i].Val = "https://images.unsplash.com/photo-1713171158509-f2a6582581a0?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+						}
+						hasSrc = true
+						break
+					}
+				}
+				if !hasSrc {
+					if isPresigned {
+						n.Attr = append(n.Attr, html.Attribute{Key: "src", Val: presignedURL.String()})
+					} else {
+						n.Attr = append(n.Attr, html.Attribute{Key: "src", Val: "https://images.unsplash.com/photo-1713171158509-f2a6582581a0?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"})
+					}
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			updateImgTags(c)
+		}
+	}
+	updateImgTags(doc)
+
+	var buf bytes.Buffer
+	err = html.Render(&buf, doc)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	updatedHTMLContent := buf.String()
+	blog.Content = updatedHTMLContent
+
+	return &blog, nil
 }

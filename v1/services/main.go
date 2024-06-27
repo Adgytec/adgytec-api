@@ -11,7 +11,9 @@ import (
 	"log"
 	mathRand "math/rand/v2"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
@@ -80,4 +82,14 @@ func handleImage(img image.Image, buf *bytes.Buffer, format string) error {
 
 	return nil
 
+}
+
+func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType string, wg *sync.WaitGroup, errChan chan error) {
+	defer wg.Done()
+
+	_, err := spaceStorage.PutObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, buf, int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		log.Printf("failed to upload image: %v", err)
+	}
+	errChan <- err
 }

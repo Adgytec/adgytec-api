@@ -44,23 +44,13 @@ type NewsPut struct {
 	Id    string `json:"-"`
 }
 
-func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType string, wg *sync.WaitGroup, errChan chan error) {
-	defer wg.Done()
-
-	_, err := spaceStorage.PutObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, buf, int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
-	if err != nil {
-		log.Printf("failed to upload image: %v", err)
-	}
-	errChan <- err
-}
-
 func addNewsToDatabase(n *News, projectId string, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 
 	args := dbqueries.CreateNewsItemArgs(n.Title, n.Link, n.Text, n.Image, projectId)
 	_, err := db.Exec(ctx, dbqueries.CreateNewsItem, args)
 	if err != nil {
-		log.Printf("Error updating user in database: %v\n", err)
+		log.Printf("Error adding news item in database: %v\n", err)
 	}
 	errChan <- err
 }

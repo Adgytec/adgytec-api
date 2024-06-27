@@ -25,20 +25,18 @@ func GetUUID(w http.ResponseWriter, r *http.Request) {
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
 
-func PostImage(w http.ResponseWriter, r *http.Request) {
-	projectId := chi.URLParam(r, "projectId")
-	blogId := chi.URLParam(r, "blogId")
-	maxSize := 10 << 20
+func PostMedia(w http.ResponseWriter, r *http.Request) {
+	// projectId := chi.URLParam(r, "projectId")
+	// blogId := chi.URLParam(r, "blogId")
+	maxSize := 150 << 20 // 150 mb
 
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		return
 	}
 
-	requiredFileFields := "image"
-
-	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
-		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+	if _, ok := r.MultipartForm.Value["metadata"]; !ok {
+		message := "Missing required field: 'metadata'"
 		helper.HandleError(w, &custom.MalformedRequest{
 			Status:  http.StatusBadRequest,
 			Message: message,
@@ -46,9 +44,8 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var mediaDetails services.BlogMedia
-	err = mediaDetails.UploadMedia(r, projectId, blogId)
-
+	var bm services.BlogMedia
+	err, success := bm.UploadMedia(r)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -56,9 +53,15 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = mediaDetails
+
+	msg := "uploaded media files"
+	if !success {
+		msg += ", but with exceptions"
+	}
+	payload.Message = msg
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
+
 }
 
 func DeleteMedia(w http.ResponseWriter, r *http.Request) {
@@ -78,5 +81,70 @@ func DeleteMedia(w http.ResponseWriter, r *http.Request) {
 	payload.Message = "successfully deleted the media files"
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
+}
 
+func PostBlog(w http.ResponseWriter, r *http.Request) {
+	maxSize := 20 << 20 // 20mb
+	err := helper.ParseMultipartForm(w, r, maxSize)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	projectId := chi.URLParam(r, "projectId")
+	blogId := chi.URLParam(r, "blogId")
+	userId := r.Context().Value(custom.UserID).(string)
+
+	requiredFields := []string{"title", "content", "author"}
+	requiredFileFields := "cover"
+
+	fmt.Println("running1")
+
+	for _, field := range requiredFields {
+		if _, ok := r.MultipartForm.Value[field]; !ok {
+			message := fmt.Sprintf("Missing required field: %s", field)
+			helper.HandleError(w, &custom.MalformedRequest{
+				Status:  http.StatusBadRequest,
+				Message: message,
+			})
+			return
+		}
+	}
+
+	fmt.Println("running2")
+
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	fmt.Println("running3")
+
+	title := r.FormValue("title")
+	summary := r.FormValue("summary")
+	content := r.FormValue("content")
+	author := r.FormValue("author")
+
+	var blogItem services.Blog
+	blogItem.Title = title
+	blogItem.Summary = summary
+	blogItem.Id = blogId
+	blogItem.Content = content
+	blogItem.Author = author
+
+	err = blogItem.CreateBlog(r, projectId, userId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully created the blog"
+
+	helper.EncodeJSON(w, http.StatusCreated, payload)
 }

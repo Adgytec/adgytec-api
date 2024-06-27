@@ -148,3 +148,26 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }
+
+// only title, author, created_at, summary, cover image
+func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+
+	var blogs services.Blog
+	all, err := blogs.GetBlogsByProjectId(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}
+
+func GetBlogById(w http.ResponseWriter, r *http.Request) {
+
+}

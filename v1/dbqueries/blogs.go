@@ -29,3 +29,27 @@ func CreateBlogItemArgs(
 		"author":    author,
 	}
 }
+
+const GetBlogsByProjectId = `
+	SELECT blog_id, title, cover_image, short_text, created_at, author
+	FROM blogs
+	WHERE project_id = @projectId
+`
+
+func GetBlogsByProjectIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
+}
+
+const GetBlogById = `
+	SELECT blog_id, title, cover_image, short_text, created_at, author, updated_at, content
+	FROM blogs
+	WHERE blog_id = @blogId
+`
+
+func GetBlogsByIdArgs(blogId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"blogId": blogId,
+	}
+}

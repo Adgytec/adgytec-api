@@ -7,7 +7,6 @@ import (
 	"image"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -109,36 +108,6 @@ func (n *News) CreateNewsItem(r *http.Request, projectId string) error {
 	}
 
 	return nil
-}
-
-type IndexedValue struct {
-	Index int
-	Url   string
-}
-
-func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg *sync.WaitGroup, urlChan chan IndexedValue) {
-	defer wg.Done()
-
-	reqParams := make(url.Values)
-	presignedURL, err := spaceStorage.PresignedGetObject(ctx,
-		os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
-		objectName,
-		expires,
-		reqParams,
-	)
-	if err != nil {
-		log.Printf("error generating presigned url for the image: %v\n", err)
-		urlChan <- IndexedValue{
-			Index: ind,
-			Url:   "",
-		}
-		return
-	}
-
-	urlChan <- IndexedValue{
-		Index: ind,
-		Url:   presignedURL.String(),
-	}
 }
 
 func (n *News) GetAllNewsByProjectId(projectId string, limit int) (*[]News, error) {

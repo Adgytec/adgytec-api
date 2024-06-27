@@ -11,6 +11,7 @@ import (
 	"log"
 	mathRand "math/rand/v2"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -29,6 +30,11 @@ var spaceStorage *minio.Client
 var firebaseClient *auth.Client
 
 var expires time.Duration = time.Second * 60 * 60 // 1hr
+
+type IndexedValue struct {
+	Index int
+	Url   string
+}
 
 func SetExternalConnection(pool *pgxpool.Pool, storage *minio.Client, client *auth.Client) {
 	db = pool
@@ -92,4 +98,29 @@ func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType
 		log.Printf("failed to upload image: %v", err)
 	}
 	errChan <- err
+}
+
+func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg *sync.WaitGroup, urlChan chan IndexedValue) {
+	defer wg.Done()
+
+	reqParams := make(url.Values)
+	presignedURL, err := spaceStorage.PresignedGetObject(ctx,
+		os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
+		objectName,
+		expires,
+		reqParams,
+	)
+	if err != nil {
+		log.Printf("error generating presigned url for the image: %v\n", err)
+		urlChan <- IndexedValue{
+			Index: ind,
+			Url:   "",
+		}
+		return
+	}
+
+	urlChan <- IndexedValue{
+		Index: ind,
+		Url:   presignedURL.String(),
+	}
 }

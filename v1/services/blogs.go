@@ -11,7 +11,9 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
@@ -26,14 +28,23 @@ type BlogMedia struct {
 }
 
 type Blog struct {
-	Title     string `json:"title" db:"title"`
-	Summary   string `json:"summary,omitempty" db:"short_text"`
-	Content   string `json:"content" db:"content"`
-	Author    string `json:"author" db:"author"`
-	Id        string `json:"blogId" db:"blog_id"`
-	CreatedAt string `json:"createdAt" db:"created_at"`
-	UpdatedAt string `json:"updatedAt" db:"updated_at"`
-	Cover     string `json:"cover" db:"cover_image"`
+	Title     string    `json:"title" db:"title"`
+	Summary   string    `json:"summary,omitempty" db:"short_text"`
+	Content   string    `json:"content,omitempty" db:"content"`
+	Author    string    `json:"author" db:"author"`
+	Id        string    `json:"blogId" db:"blog_id"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+	Cover     string    `json:"cover" db:"cover_image"`
+}
+
+type BlogSummary struct {
+	Title     string    `json:"title" db:"title"`
+	Summary   string    `json:"summary,omitempty" db:"short_text"`
+	Author    string    `json:"author" db:"author"`
+	Id        string    `json:"blogId" db:"blog_id"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	Cover     string    `json:"cover" db:"cover_image"`
 }
 
 func (bm *BlogMedia) UploadMedia(r *http.Request) (error, bool) {
@@ -189,4 +200,41 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 	}
 
 	return nil
+}
+
+func (b *Blog) GetBlogsByProjectId(projectId string) (*[]BlogSummary, error) {
+	args := dbqueries.GetBlogsByProjectIdArgs(projectId)
+	rows, err := db.Query(ctx, dbqueries.GetBlogsByProjectId, args)
+
+	if err != nil {
+		log.Printf("Error fetching blogs from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	blogs, err := pgx.CollectRows(rows, pgx.RowToStructByName[BlogSummary])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	wg := new(sync.WaitGroup)
+	urlChan := make(chan IndexedValue, len(blogs))
+
+	for ind, item := range blogs {
+		wg.Add(1)
+
+		img := item.Cover
+		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+	}
+
+	wg.Wait()
+	close(urlChan)
+
+	for url := range urlChan {
+		ind := url.Index
+		blogs[ind].Cover = url.Url
+	}
+
+	return &blogs, nil
 }

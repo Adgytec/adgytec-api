@@ -187,3 +187,47 @@ func GetBlogById(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
+
+func PatchBlogMetadataById(w http.ResponseWriter, r *http.Request) {
+	blogId := chi.URLParam(r, "blogId")
+
+	blogDetails, err := helper.DecodeJSON[services.BlogSummary](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	blogDetails.Id = blogId
+	err = blogDetails.PatchBlogMetadataById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "successfully updated blog data"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func DeleteBlogById(w http.ResponseWriter, r *http.Request) {
+	blogId := chi.URLParam(r, "blogId")
+	projectId := chi.URLParam(r, "projectId")
+
+	var blog services.Blog
+	blog.Id = blogId
+
+	err := blog.DeleteBlogById(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "successfully deleted the blog item"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}

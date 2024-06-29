@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rohan031/adgytec-api/database"
 	"github.com/rohan031/adgytec-api/firebase"
 	"github.com/rohan031/adgytec-api/helper"
@@ -262,6 +263,16 @@ func ServicesRoleAuthorization(next http.Handler) http.Handler {
 				helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message})
 				return
 			}
+			var pgError *pgconn.PgError
+
+			if errors.As(err, &pgError) {
+				if pgError.Code == "22P02" {
+					message := "Invalid project id to update."
+					helper.HandleError(w, &custom.MalformedRequest{Status: http.StatusNotFound, Message: message})
+					return
+				}
+			}
+
 			log.Printf("Error reading rows: %v\n", err)
 			helper.HandleError(w, err)
 			return

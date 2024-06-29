@@ -94,6 +94,8 @@ func Router() *chi.Mux {
 		r.Post("/services/blogs/{projectId}/{blogId}", controllers.PostBlog)
 		r.Get("/services/blogs/{projectId}", controllers.GetAllBlogsByProjectId)
 		r.Get("/services/blogs/{projectId}/{blogId}", controllers.GetBlogById)
+		r.Patch("/services/blogs/{projectId}/{blogId}", controllers.PatchBlogMetadataById)
+		r.Delete("/services/blogs/{projectId}/{blogId}", controllers.DeleteBlogById)
 
 	})
 

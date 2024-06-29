@@ -240,7 +240,7 @@ func (n *NewsPut) NewsUpdate() error {
 
 	_, err := db.Exec(ctx, query)
 	if err != nil {
-		log.Printf("Error updating user in database: %v\n", err)
+		log.Printf("Error updating news in database: %v\n", err)
 	}
 
 	return err

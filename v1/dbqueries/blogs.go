@@ -53,3 +53,28 @@ func GetBlogsByIdArgs(blogId string) pgx.NamedArgs {
 		"blogId": blogId,
 	}
 }
+
+const PatchBlogMetadataById = `
+	UPDATE blogs 
+	SET title=@title, short_text=@summary
+	WHERE blog_id=@blogId
+`
+
+func PatchBlogMetadataByIdArgs(title, summary, blogId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"title":   title,
+		"summary": summary,
+		"blogId":  blogId,
+	}
+}
+
+const DeleteBlogById = `
+	DELETE FROM blogs
+	WHERE blog_id=@blogId
+`
+
+func DeleteBlogByIdArgs(blogId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"blogId": blogId,
+	}
+}

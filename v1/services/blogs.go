@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
@@ -262,7 +264,8 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 	// copied will reread it
 	doc, err := html.Parse(bytes.NewReader([]byte(blog.Content)))
 	if err != nil {
-		return nil, err
+		log.Printf("error parsing html: %v\n", err)
+		return &blog, err
 	}
 
 	var updateImgTags func(*html.Node)
@@ -272,7 +275,7 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 			for i := 0; i < len(n.Attr); i++ {
 				if n.Attr[i].Key == "data-path" {
 					dataKey = n.Attr[i].Val
-					n.Attr = append(n.Attr[:i], n.Attr[i+1:]...) // Remove data-key attribute
+					// n.Attr = append(n.Attr[:i], n.Attr[i+1:]...) // Remove data-key attribute
 					break
 				}
 			}
@@ -316,10 +319,90 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 	var buf bytes.Buffer
 	err = html.Render(&buf, doc)
 	if err != nil {
-		log.Fatalln(err)
+		log.Printf("error getting html from buffer: %v\n", err)
+		return &blog, nil
 	}
 	updatedHTMLContent := buf.String()
 	blog.Content = updatedHTMLContent
 
 	return &blog, nil
+}
+
+func (bs *BlogSummary) PatchBlogMetadataById() error {
+	args := dbqueries.PatchBlogMetadataByIdArgs(bs.Title, bs.Summary, bs.Id)
+	_, err := db.Exec(ctx, dbqueries.PatchBlogMetadataById, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid blog id to update."
+				return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			}
+		}
+
+		log.Printf("Error updating blog data: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+func deleteBlogFromDatabase(b *Blog) error {
+	args := dbqueries.DeleteBlogByIdArgs(b.Id)
+	_, err := db.Exec(ctx, dbqueries.DeleteBlogById, args)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid blog id to delete."
+				return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			}
+		}
+
+		log.Printf("Error deleting blog data: %v\n", err)
+	}
+
+	return err
+}
+
+func deleteBlogMedia(projectId, blogId string) {
+	mediaPrefix := fmt.Sprintf("services/blogs/%v/%v", projectId, blogId)
+	if os.Getenv("ENV") == "dev" {
+		mediaPrefix = "dev/" + mediaPrefix
+	}
+	objectsCh := make(chan minio.ObjectInfo)
+	log.Println(mediaPrefix)
+
+	go func() {
+		defer close(objectsCh)
+
+		opts := minio.ListObjectsOptions{
+			Recursive: true,
+			Prefix:    mediaPrefix,
+		}
+		// List all objects from a bucket-name with a matching prefix.
+		for object := range spaceStorage.ListObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), opts) {
+			if object.Err != nil {
+				log.Printf("error listing object: %v\n", object.Err)
+			} else {
+				objectsCh <- object
+			}
+		}
+	}()
+
+	opts := minio.RemoveObjectsOptions{}
+
+	for rErr := range spaceStorage.RemoveObjects(context.Background(), os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectsCh, opts) {
+		log.Println("Error detected during deletion: ", rErr)
+	}
+}
+
+func (b *Blog) DeleteBlogById(projectId string) error {
+
+	err := deleteBlogFromDatabase(b)
+	go deleteBlogMedia(projectId, b.Id)
+
+	return err
 }

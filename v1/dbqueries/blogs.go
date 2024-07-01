@@ -78,3 +78,24 @@ func DeleteBlogByIdArgs(blogId string) pgx.NamedArgs {
 		"blogId": blogId,
 	}
 }
+
+const PatchBlogCover = `
+	WITH cover AS (
+		SELECT cover_image as image
+		FROM blogs 
+		WHERE blog_id = @blogId
+	)
+	UPDATE blogs
+	SET cover_image  = @cover
+	WHERE blog_id = @blogId
+	RETURNING (
+		SELECT image FROM cover
+	)
+`
+
+func PatchBlogCoverArgs(blogId, cover string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"blogId": blogId,
+		"cover":  cover,
+	}
+}

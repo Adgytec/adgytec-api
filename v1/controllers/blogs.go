@@ -98,8 +98,6 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 	requiredFields := []string{"title", "content", "author"}
 	requiredFileFields := "cover"
 
-	fmt.Println("running1")
-
 	for _, field := range requiredFields {
 		if _, ok := r.MultipartForm.Value[field]; !ok {
 			message := fmt.Sprintf("Missing required field: %s", field)
@@ -111,8 +109,6 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println("running2")
-
 	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
 		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
 		helper.HandleError(w, &custom.MalformedRequest{
@@ -121,8 +117,6 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	fmt.Println("running3")
 
 	title := r.FormValue("title")
 	summary := r.FormValue("summary")
@@ -227,6 +221,44 @@ func DeleteBlogById(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Message = "successfully deleted the blog item"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}
+
+func PatchBlogCover(w http.ResponseWriter, r *http.Request) {
+	maxSize := 10 << 20 // 10mb
+	err := helper.ParseMultipartForm(w, r, maxSize)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	requiredFileFields := "cover"
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	projectId := chi.URLParam(r, "projectId")
+	blogId := chi.URLParam(r, "blogId")
+
+	var blog services.Blog
+
+	blog.Id = blogId
+	err = blog.PatchBlogCover(r, projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "successfully updated blog cover image"
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 

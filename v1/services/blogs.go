@@ -261,6 +261,13 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 		return nil, err
 	}
 
+	cover, err := spaceStorage.PresignedGetObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), blog.Cover, time.Hour, nil)
+	if err != nil {
+		log.Printf("error generating presigned url for cover image: %v\n", err)
+	} else {
+		blog.Cover = cover.String()
+	}
+
 	// copied will reread it
 	doc, err := html.Parse(bytes.NewReader([]byte(blog.Content)))
 	if err != nil {
@@ -286,7 +293,6 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 				if err != nil {
 					log.Printf("Can't genrate url for image: %v\n", err)
 					isPresigned = false
-
 				}
 				// Add or update src attribute
 				hasSrc := false
@@ -405,4 +411,106 @@ func (b *Blog) DeleteBlogById(projectId string) error {
 	go deleteBlogMedia(projectId, b.Id)
 
 	return err
+}
+
+func handleBlogCoverDatabase(cover, blogid string, wg *sync.WaitGroup, errChan chan error) {
+	defer wg.Done()
+
+	args := dbqueries.PatchBlogCoverArgs(blogid, cover)
+	rows, err := db.Query(ctx, dbqueries.PatchBlogCover, args)
+	if err != nil {
+		log.Printf("error updating cover image in db: %v\n", err)
+		errChan <- err
+		return
+	}
+	defer rows.Close()
+
+	prevPath, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[struct {
+		Image string `db:"image"`
+	}])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "blog with the following id doesn't exist"
+			errChan <- &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			return
+		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid blog id."
+				errChan <- &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+				return
+			}
+		}
+
+		log.Printf("Error reading rows: %v\n", err)
+		errChan <- nil
+		return
+	}
+
+	go func() {
+		err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), prevPath.Image, minio.RemoveObjectOptions{})
+		if err != nil {
+			log.Printf("Error deleting image from space storage: %v\n", err)
+		}
+	}()
+
+	errChan <- nil
+}
+
+func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
+	file, header, err := r.FormFile("cover")
+	if err != nil {
+		log.Printf("Error retriving file: %v\n ", err)
+		return err
+	}
+
+	defer file.Close()
+
+	contentType := header.Header.Get("Content-type")
+	if !strings.HasPrefix(contentType, "image/") {
+		return (&custom.MalformedRequest{
+			Status:  http.StatusUnsupportedMediaType,
+			Message: http.StatusText(http.StatusUnsupportedMediaType),
+		})
+	}
+
+	img, format, err := image.Decode(file)
+	if err != nil {
+		log.Printf("Error decoding image: %v\n", err)
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	err = handleImage(img, buf, format)
+	if err != nil {
+		return err
+	}
+
+	objectName := fmt.Sprintf("services/blogs/%v/%v/%v.%v", projectId, b.Id, generateRandomString(), format)
+
+	if val := os.Getenv("ENV"); val == "dev" {
+		objectName = "dev/" + objectName
+	}
+	b.Cover = objectName
+
+	wg := new(sync.WaitGroup)
+	errChan := make(chan error, 2)
+
+	wg.Add(2)
+
+	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go handleBlogCoverDatabase(objectName, b.Id, wg, errChan)
+
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

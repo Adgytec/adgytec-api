@@ -99,3 +99,16 @@ func PatchBlogCoverArgs(blogId, cover string) pgx.NamedArgs {
 		"cover":  cover,
 	}
 }
+
+const PatchBlogContent = `
+	UPDATE blogs
+	SET content = @content
+	WHERE blog_id = @blogId
+`
+
+func PatchBlogContentArgs(blogId, content string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"blogId":  blogId,
+		"content": content,
+	}
+}

@@ -25,3 +25,4 @@ go.work
 firebase-config.json
 
 tmp
+build-errors.log

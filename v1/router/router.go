@@ -97,7 +97,7 @@ func Router() *chi.Mux {
 		r.Patch("/services/blogs/{projectId}/{blogId}", controllers.PatchBlogMetadataById)
 		r.Delete("/services/blogs/{projectId}/{blogId}", controllers.DeleteBlogById)
 		r.Patch("/services/blogs/{projectId}/{blogId}/cover", controllers.PatchBlogCover)
-
+		r.Patch("/services/blogs/{projectId}/{blogId}/content", controllers.PatchBlogContent)
 	})
 
 	return router

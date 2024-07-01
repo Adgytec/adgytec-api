@@ -514,3 +514,21 @@ func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
 
 	return nil
 }
+
+func (b *Blog) PatchBlogContent() error {
+	args := dbqueries.PatchBlogContentArgs(b.Id, b.Content)
+	_, err := db.Exec(ctx, dbqueries.PatchBlogContent, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid blog id to update."
+				return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			}
+		}
+
+		log.Printf("error updating blog contnet: %v\n", err)
+	}
+	return err
+}

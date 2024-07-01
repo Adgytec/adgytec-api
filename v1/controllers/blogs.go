@@ -263,3 +263,26 @@ func PatchBlogCover(w http.ResponseWriter, r *http.Request) {
 	helper.EncodeJSON(w, http.StatusOK, payload)
 
 }
+
+func PatchBlogContent(w http.ResponseWriter, r *http.Request) {
+	blogId := chi.URLParam(r, "blogId")
+
+	blogContent, err := helper.DecodeJSON[services.Blog](w, r, mb*10)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	blogContent.Id = blogId
+	err = blogContent.PatchBlogContent()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully updated blog content"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}

@@ -70,7 +70,7 @@ func Router() *chi.Mux {
 
 		// blogs
 		r.Get("/services/blogs", controllers.GetAllBlogsByProjectIdClient)
-		r.Get("/services/blogs/{blogId}", controllers.GetBlogById)
+		r.Get("/services/blog/{blogId}", controllers.GetBlogById)
 	})
 
 	// getting uuid

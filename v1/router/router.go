@@ -67,6 +67,10 @@ func Router() *chi.Mux {
 		// endpoints here
 
 		r.Get("/services/news", controllers.GetAllNewsClient)
+
+		// blogs
+		r.Get("/services/blogs", controllers.GetAllBlogsByProjectIdClient)
+		r.Get("/services/blogs/{blogId}", controllers.GetBlogById)
 	})
 
 	// getting uuid

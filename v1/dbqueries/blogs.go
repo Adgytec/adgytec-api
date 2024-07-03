@@ -34,6 +34,7 @@ const GetBlogsByProjectId = `
 	SELECT blog_id, title, cover_image, short_text, created_at, author
 	FROM blogs
 	WHERE project_id = @projectId
+	ORDER BY created_at DESC
 `
 
 func GetBlogsByProjectIdArgs(projectId string) pgx.NamedArgs {

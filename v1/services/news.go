@@ -236,10 +236,22 @@ func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 }
 
 func (n *NewsPut) NewsUpdate() error {
-	query := dbqueries.UpdateNewsById(n.Id, n.Title, n.Link, n.Text)
+	if len(n.Id) == 0 || len(n.Title) == 0 || len(n.Link) == 0 || len(n.Text) == 0 {
+		return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: "All news details not provided."}
+	}
 
-	_, err := db.Exec(ctx, query)
+	args := dbqueries.UpdateNewsByIdArgs(n.Id, n.Title, n.Link, n.Text)
+	_, err := db.Exec(ctx, dbqueries.UpdateNewsById, args)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid project id to update."
+				return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			}
+		}
+
 		log.Printf("Error updating news in database: %v\n", err)
 	}
 

@@ -30,6 +30,7 @@ var spaceStorage *minio.Client
 var firebaseClient *auth.Client
 
 var expires time.Duration = time.Second * 60 * 60 // 1hr
+var week time.Duration = 604800 * time.Second
 
 type IndexedValue struct {
 	Index int

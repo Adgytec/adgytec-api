@@ -261,7 +261,7 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 		return nil, err
 	}
 
-	cover, err := spaceStorage.PresignedGetObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), blog.Cover, time.Hour, nil)
+	cover, err := spaceStorage.PresignedGetObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), blog.Cover, week, nil)
 	if err != nil {
 		log.Printf("error generating presigned url for cover image: %v\n", err)
 	} else {
@@ -289,7 +289,7 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 			if dataKey != "" {
 				// Generate presigned URL
 				isPresigned := true
-				presignedURL, err := spaceStorage.PresignedGetObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), dataKey, time.Hour, nil)
+				presignedURL, err := spaceStorage.PresignedGetObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), dataKey, week, nil)
 				if err != nil {
 					log.Printf("Can't genrate url for image: %v\n", err)
 					isPresigned = false

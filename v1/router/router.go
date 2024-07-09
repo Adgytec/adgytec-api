@@ -1,6 +1,8 @@
 package router
 
 import (
+	"os"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 
@@ -11,8 +13,17 @@ import (
 func Router() *chi.Mux {
 	router := chi.NewRouter()
 
+	allowedOrigins := []string{
+		"https://*.adgytec.in",
+		"https://ecrimino.com",
+		"https://jdkshipping.com",
+	}
+	if os.Getenv("ENV") == "dev" {
+		allowedOrigins = append(allowedOrigins, "http://localhost:*")
+	}
+
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -102,6 +113,13 @@ func Router() *chi.Mux {
 		r.Delete("/services/blogs/{projectId}/{blogId}", controllers.DeleteBlogById)
 		r.Patch("/services/blogs/{projectId}/{blogId}/cover", controllers.PatchBlogCover)
 		r.Patch("/services/blogs/{projectId}/{blogId}/content", controllers.PatchBlogContent)
+	})
+
+	// general public route
+	router.Group(func(r chi.Router) {
+		// middleware
+
+		r.Get("/jdk/contact-us", controllers.PostContactUsJDK)
 	})
 
 	return router

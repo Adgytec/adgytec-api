@@ -9,7 +9,7 @@ import (
 )
 
 type Constraint interface {
-	UserCreationDetails
+	any
 }
 
 func SendEmail[T Constraint](data T, templatePath string, to []string) error {

@@ -59,8 +59,9 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 		data.Email, // user to send email
 	}
 
+	subject := "Adgytec account creation"
 	// sending user credentials via email
-	err = services.SendEmail(userDetails, templatePath, to)
+	err = services.SendEmail(userDetails, templatePath, to, subject)
 	var payload services.JSONResponse
 
 	payload.Error = false

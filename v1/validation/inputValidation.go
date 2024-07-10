@@ -32,3 +32,10 @@ func ValidateName(name string) bool {
 	// checking if name is empty or not
 	return match && len(name) >= 3
 }
+
+func ValidatePhone(phone string) bool {
+	regex := `^(\+?\d{1,3})?[- .]?\d{3}[- .]?\d{3}[- .]?\d{4}$`
+
+	match, _ := regexp.MatchString(regex, phone)
+	return match
+}

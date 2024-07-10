@@ -12,15 +12,19 @@ type Constraint interface {
 	any
 }
 
-func SendEmail[T Constraint](data T, templatePath string, to []string) error {
+func SendEmail[T Constraint](data T, templatePath string, to []string, subject string, isPrivate ...int) error {
 	smtpServer := "smtp.gmail.com"
 	smtpPort := "587"
 
 	from := os.Getenv("FROM")
 	password := os.Getenv("PASS")
 
+	if len(isPrivate) >= 1 {
+		from = os.Getenv("PVTEMAIL")
+		password = os.Getenv("PVTPASS")
+	}
+
 	// mail content
-	subject := "Adgytec account creation"
 	templateData := data
 
 	t, err := template.ParseFiles(templatePath)

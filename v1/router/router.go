@@ -19,7 +19,7 @@ func Router() *chi.Mux {
 		"https://jdkshipping.com",
 	}
 	if os.Getenv("ENV") == "dev" {
-		allowedOrigins = append(allowedOrigins, "http://localhost:*")
+		allowedOrigins = append(allowedOrigins, "http://*")
 	}
 
 	router.Use(cors.Handler(cors.Options{
@@ -119,7 +119,7 @@ func Router() *chi.Mux {
 	router.Group(func(r chi.Router) {
 		// middleware
 
-		r.Get("/jdk/contact-us", controllers.PostContactUsJDK)
+		r.Post("/jdk/contact-us", controllers.PostContactUsJDK)
 	})
 
 	return router

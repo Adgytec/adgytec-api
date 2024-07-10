@@ -170,8 +170,18 @@ updateUserName() => updates user name
 */
 func (u *User) ValidateUpdateInput() bool {
 	// validating email, role and name parameters
-	return (validation.ValidateRole(u.Role) ||
-		validation.ValidateName(u.Name))
+	if len(u.Role) == 0 && len(u.Name) == 0 {
+		return false
+	}
+
+	if (len(u.Role) > 0 && !validation.ValidateRole(u.Role)) ||
+		(len(u.Name) > 0 && !validation.ValidateName(u.Name)) {
+		return false
+	}
+
+	return true
+	// return (validation.ValidateRole(u.Role) ||
+	// 	validation.ValidateName(u.Name))
 }
 
 func updateUserFirebase(userId, name, role string, wg *sync.WaitGroup, errchan chan error) {

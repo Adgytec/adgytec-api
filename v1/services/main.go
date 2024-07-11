@@ -10,6 +10,7 @@ import (
 	"image/png"
 	"log"
 	mathRand "math/rand/v2"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"firebase.google.com/go/v4/auth"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/nfnt/resize"
@@ -63,16 +65,29 @@ func generateRandomString() string {
 
 }
 
+func isImageFile(header *multipart.FileHeader) (string, error) {
+	contentType := header.Header.Get("Content-type")
+	if !strings.HasPrefix(contentType, "image/") {
+		return "", (&custom.MalformedRequest{
+			Status:  http.StatusUnsupportedMediaType,
+			Message: http.StatusText(http.StatusUnsupportedMediaType),
+		})
+	}
+
+	return contentType, nil
+}
+
 func handleImage(img image.Image, buf *bytes.Buffer, format string) error {
-	resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
 	switch strings.ToLower(format) {
 	case "jpeg", "jpg":
+		resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
 		err := jpeg.Encode(buf, resizedImg, &jpeg.Options{Quality: 80})
 		if err != nil {
 			log.Printf("failed to encode JPEG image: %v", err)
 			return err
 		}
 	case "png":
+		resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
 		encoder := png.Encoder{CompressionLevel: png.BestCompression}
 		err := encoder.Encode(buf, resizedImg)
 		if err != nil {
@@ -124,4 +139,8 @@ func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg 
 		Index: ind,
 		Url:   presignedURL.String(),
 	}
+}
+
+func GenerateUUID() uuid.UUID {
+	return uuid.New()
 }

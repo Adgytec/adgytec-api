@@ -12,13 +12,40 @@ import (
 )
 
 func PostProject(w http.ResponseWriter, r *http.Request) {
-	project, err := helper.DecodeJSON[services.Project](w, r, mb)
+	maxSize := 10 << 20
+	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
-		helper.HandleError(w, err)
 		return
 	}
 
-	clientToken, err := project.CreateProject()
+	requiredFields := []string{"projectName"}
+	requiredFileFields := "cover"
+
+	for _, field := range requiredFields {
+		if _, ok := r.MultipartForm.Value[field]; !ok {
+			message := fmt.Sprintf("Missing required field: %s", field)
+			helper.HandleError(w, &custom.MalformedRequest{
+				Status:  http.StatusBadRequest,
+				Message: message,
+			})
+			return
+		}
+	}
+
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	projectName := r.FormValue("projectName")
+	projectDetails := &services.Project{
+		ProjectName: projectName,
+	}
+	err = projectDetails.CreateProject(r)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -26,12 +53,7 @@ func PostProject(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Message = fmt.Sprintf("Successfully created new project: %s", project.ProjectName)
-	payload.Data = &struct {
-		ClientToken string `json:"clientToken"`
-	}{
-		ClientToken: clientToken,
-	}
+	payload.Message = fmt.Sprintf("Successfully created new project: %s", projectDetails.ProjectName)
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }

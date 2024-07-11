@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -62,12 +61,9 @@ func (n *News) CreateNewsItem(r *http.Request, projectId string) error {
 	}
 	defer file.Close()
 
-	contentType := header.Header.Get("Content-type")
-	if !strings.HasPrefix(contentType, "image/") {
-		return (&custom.MalformedRequest{
-			Status:  http.StatusUnsupportedMediaType,
-			Message: http.StatusText(http.StatusUnsupportedMediaType),
-		})
+	contentType, err := isImageFile(header)
+	if err != nil {
+		return err
 	}
 
 	img, format, err := image.Decode(file)
@@ -171,7 +167,7 @@ func (n *News) DeleteNews() error {
 	err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), news.Image, minio.RemoveObjectOptions{})
 	if err != nil {
 		log.Printf("Error deleting image from space storage: %v\n", err)
-		return err
+		// return err
 	}
 
 	return nil
@@ -208,7 +204,6 @@ func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 		return err
 	}
 
-	log.Println(news)
 	if len(news) == 0 {
 		return &custom.MalformedRequest{Status: http.StatusNotFound, Message: "News not found"}
 	}

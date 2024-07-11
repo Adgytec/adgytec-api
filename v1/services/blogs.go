@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -69,8 +68,14 @@ func (bm *BlogMedia) UploadMedia(r *http.Request) (error, bool) {
 			}
 			defer file.Close()
 
-			contentType := header.Header.Get("Content-type")
-			if !strings.HasPrefix(contentType, "image/") {
+			// contentType := header.Header.Get("Content-type")
+			// if !strings.HasPrefix(contentType, "image/") {
+			// 	isSuccess = false
+			// 	return
+			// }
+
+			contentType, err := isImageFile(header)
+			if err != nil {
 				isSuccess = false
 				return
 			}
@@ -158,12 +163,17 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 	}
 	defer file.Close()
 
-	contentType := header.Header.Get("Content-type")
-	if !strings.HasPrefix(contentType, "image/") {
-		return (&custom.MalformedRequest{
-			Status:  http.StatusUnsupportedMediaType,
-			Message: http.StatusText(http.StatusUnsupportedMediaType),
-		})
+	// contentType := header.Header.Get("Content-type")
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return (&custom.MalformedRequest{
+	// 		Status:  http.StatusUnsupportedMediaType,
+	// 		Message: http.StatusText(http.StatusUnsupportedMediaType),
+	// 	})
+	// }
+
+	contentType, err := isImageFile(header)
+	if err != nil {
+		return err
 	}
 
 	img, format, err := image.Decode(file)
@@ -468,12 +478,17 @@ func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
 
 	defer file.Close()
 
-	contentType := header.Header.Get("Content-type")
-	if !strings.HasPrefix(contentType, "image/") {
-		return (&custom.MalformedRequest{
-			Status:  http.StatusUnsupportedMediaType,
-			Message: http.StatusText(http.StatusUnsupportedMediaType),
-		})
+	// contentType := header.Header.Get("Content-type")
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return (&custom.MalformedRequest{
+	// 		Status:  http.StatusUnsupportedMediaType,
+	// 		Message: http.StatusText(http.StatusUnsupportedMediaType),
+	// 	})
+	// }
+	
+	contentType, err := isImageFile(header)
+	if err != nil {
+		return err
 	}
 
 	img, format, err := image.Decode(file)

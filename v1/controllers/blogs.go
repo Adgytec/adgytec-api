@@ -12,7 +12,7 @@ import (
 )
 
 func GetUUID(w http.ResponseWriter, r *http.Request) {
-	id := generateUUID()
+	id := services.GenerateUUID()
 
 	var payload services.JSONResponse
 	payload.Error = false

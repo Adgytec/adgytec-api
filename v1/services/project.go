@@ -1,15 +1,21 @@
 package services
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"image"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
 )
@@ -18,6 +24,7 @@ type Project struct {
 	ProjectName string    `json:"projectName" db:"project_name"`
 	Id          string    `json:"projectId,omitempty" db:"project_id"`
 	CreatedAt   time.Time `json:"createdAt,omitempty" db:"created_at"`
+	Cover       string    `json:"cover" db:"cover_image"`
 }
 
 type ProjectDetail struct {
@@ -26,6 +33,7 @@ type ProjectDetail struct {
 	Users     json.RawMessage `json:"users" db:"user_data"`
 	Services  json.RawMessage `json:"services" db:"service_data"`
 	Token     string          `json:"publicToken" db:"token"`
+	Cover     string          `json:"cover" db:"cover_image"`
 }
 
 type ProjectUserMap struct {
@@ -46,15 +54,15 @@ type ServicesByProject struct {
 	Services json.RawMessage `json:"services" db:"services_data"`
 }
 
-// admin only
-func (p *Project) CreateProject() (string, error) {
-	clientToken, err := generateSecureToken()
-	if err != nil {
-		return "", err
-	}
+type ProjectImage struct {
+	Cover string `db:"cover_image"`
+}
 
-	args := dbqueries.CreateProjectArgs(p.ProjectName, clientToken)
-	_, err = db.Exec(ctx, dbqueries.CreateProject, args)
+func addProjectToDatabase(p *Project, clientToken string, wg *sync.WaitGroup, errChan chan error) {
+	defer wg.Done()
+
+	args := dbqueries.CreateProjectArgs(p.ProjectName, p.Cover, p.Id, clientToken)
+	_, err := db.Exec(ctx, dbqueries.CreateProject, args)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -62,15 +70,78 @@ func (p *Project) CreateProject() (string, error) {
 			// unique project name voilation
 			if pgErr.Code == "23505" {
 				message := "A project with that name already exists."
-				return "", &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+				err = &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+				errChan <- err
+				return
 			}
 		}
 
 		log.Printf("Error adding project in database: %v\n", err)
-		return "", err
 	}
 
-	return clientToken, nil
+	errChan <- err
+}
+
+// admin only
+func (p *Project) CreateProject(r *http.Request) error {
+	file, header, err := r.FormFile("cover")
+	if err != nil {
+		log.Printf("Error retriving file: %v\n ", err)
+		return err
+	}
+	defer file.Close()
+
+	contentType, err := isImageFile(header)
+	if err != nil {
+		return err
+	}
+
+	img, format, err := image.Decode(file)
+	if err != nil {
+		log.Printf("Error decoding image: %v\n", err)
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	err = handleImage(img, buf, format)
+	if err != nil {
+		return err
+	}
+
+	projectId := GenerateUUID().String()
+
+	objectName := fmt.Sprintf("projects/%v/cover.%v", projectId, format)
+
+	if val := os.Getenv("ENV"); val == "dev" {
+		objectName = "dev/" + objectName
+	}
+
+	clientToken, err := generateSecureToken()
+	if err != nil {
+		return err
+	}
+
+	p.Cover = objectName
+	p.Id = projectId
+
+	wg := new(sync.WaitGroup)
+	errchan := make(chan error, 2)
+
+	wg.Add(2)
+
+	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errchan)
+	go addProjectToDatabase(p, clientToken, wg, errchan)
+
+	wg.Wait()
+	close(errchan)
+
+	for err := range errchan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p *Project) GetAllProjects() (*[]Project, error) {
@@ -85,6 +156,25 @@ func (p *Project) GetAllProjects() (*[]Project, error) {
 	if err != nil {
 		log.Printf("Error reading rows: %v", err)
 		return nil, err
+	}
+
+	wg := new(sync.WaitGroup)
+	urlChan := make(chan IndexedValue, len(projects))
+
+	for ind, item := range projects {
+		wg.Add(1)
+
+		img := item.Cover
+		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+	}
+
+	wg.Wait()
+	close(urlChan)
+
+	for url := range urlChan {
+		ind := url.Index
+
+		projects[ind].Cover = url.Url
 	}
 
 	return &projects, err
@@ -109,7 +199,7 @@ func (p *Project) GetProjectById() (*ProjectDetail, error) {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "22P02" {
-				message := "Invalid project id or service."
+				message := "Invalid project id."
 				return nil, &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
 			}
 		}
@@ -118,15 +208,49 @@ func (p *Project) GetProjectById() (*ProjectDetail, error) {
 		return nil, err
 	}
 
+	wg := new(sync.WaitGroup)
+	urlChan := make(chan IndexedValue, 1)
+
+	wg.Add(1)
+
+	img := project.Cover
+	go generatePresignedUrl(img, 1, expires, wg, urlChan)
+
+	wg.Wait()
+	close(urlChan)
+
+	for url := range urlChan {
+		project.Cover = url.Url
+	}
+
 	return &project, err
 }
 
 func (p *Project) DeleteProjectById() error {
 	args := dbqueries.DeleteProjectByIdArgs(p.Id)
-	_, err := db.Exec(ctx, dbqueries.DeleteProjectById, args)
+	rows, err := db.Query(ctx, dbqueries.DeleteProjectById, args)
 	if err != nil {
 		log.Printf("Error deleting project from db: %v\n", err)
 		return err
+	}
+	defer rows.Close()
+
+	project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ProjectImage])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "project not found"
+			return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+
+		}
+		log.Printf("Error reading rows: %v\n", err)
+		return err
+	}
+
+	// delete from space storage
+	err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), project.Cover, minio.RemoveObjectOptions{})
+	if err != nil {
+		log.Printf("Error deleting image from space storage: %v\n", err)
+		// return err
 	}
 
 	return nil

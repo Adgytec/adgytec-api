@@ -10,7 +10,8 @@ CREATE TABLE "users" (
 CREATE TABLE "project" (
   "project_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "project_name" varchar NOT NULL UNIQUE,
-  "created_at" timestamp DEFAULT (now())
+  "created_at" timestamp DEFAULT (now()),
+  "cover_image" varchar NOT Null
 );
 
 CREATE TABLE "services" (

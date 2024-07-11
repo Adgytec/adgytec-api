@@ -8,21 +8,20 @@ import (
 )
 
 // create project
-// const CreateProject = `INSERT INTO project (project_name)
-//
-//	VALUES (@projectName)`
 const CreateProject = `WITH inserted_row AS (
-    INSERT INTO project (project_name)
-    VALUES (@projectName)
+    INSERT INTO project (project_name, cover_image, project_id)
+    VALUES (@projectName, @coverImage, @projectId)
     RETURNING project_id
 )
 INSERT INTO client_token (token, project_id)
 SELECT @clientToken, project_id
 FROM inserted_row;`
 
-func CreateProjectArgs(projectName, clientToken string) pgx.NamedArgs {
+func CreateProjectArgs(projectName, coverImage, projectId, clientToken string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectName": projectName,
+		"coverImage":  coverImage,
+		"projectId":   projectId,
 		"clientToken": clientToken,
 	}
 }
@@ -85,13 +84,14 @@ func GetProjectByIdArgs(projectId string) pgx.NamedArgs {
 }
 
 // get all project
-const GetAllProjects = `SELECT project_id, project_name, created_at FROM project`
+const GetAllProjects = `SELECT project_id, project_name, created_at, cover_image FROM project`
 
 // get project by id
 const GetProjectDetailsById = `
 SELECT
   p.project_name as name,
   p.created_at,
+  p.cover_image,
   coalesce(ud.user_data, '[]'::json) AS user_data,
   coalesce(s.service_data, '[]'::json) as service_data,
   c.token
@@ -122,6 +122,7 @@ func GetProjectDetailsByIdArgs(projectId string) pgx.NamedArgs {
 const DeleteProjectById = `
 DELETE FROM project 
 WHERE project_id = @projectId
+RETURNING cover_image
 `
 
 func DeleteProjectByIdArgs(projectId string) pgx.NamedArgs {

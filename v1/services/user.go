@@ -370,3 +370,21 @@ func (u *User) GetAllUsers() (*[]User, error) {
 
 	return &users, nil
 }
+
+func (u *User) GetAllUsersByRole(role string) (*[]User, error) {
+	args := dbqueries.GetUsersByRoleArgs(role)
+	rows, err := db.Query(ctx, dbqueries.GetUsersByRole, args)
+	if err != nil {
+		log.Printf("Error fetching user from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	return &users, nil
+}

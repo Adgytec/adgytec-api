@@ -219,10 +219,18 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllUsers(w http.ResponseWriter, r *http.Request) {
-
+	requiredRole := r.URL.Query().Get("role")
 	var users services.User
 
-	all, err := users.GetAllUsers()
+	var all *[]services.User
+	var err error
+
+	if requiredRole != "" && requiredRole == validation.User {
+		all, err = users.GetAllUsersByRole(requiredRole)
+	} else {
+		all, err = users.GetAllUsers()
+	}
+
 	if err != nil {
 		helper.HandleError(w, err)
 		return

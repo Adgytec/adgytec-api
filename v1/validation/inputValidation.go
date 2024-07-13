@@ -3,9 +3,9 @@ package validation
 import "regexp"
 
 const (
-	superAdmin string = "super_admin"
-	admin      string = "admin"
-	user       string = "user"
+	SuperAdmin string = "super_admin"
+	Admin      string = "admin"
+	User       string = "user"
 )
 
 func ValidateEmail(email string) bool {
@@ -15,15 +15,15 @@ func ValidateEmail(email string) bool {
 
 func ValidateRole(role string) bool {
 	// checking if the new role is a valid role
-	return role == superAdmin || role == admin || role == user
+	return role == SuperAdmin || role == Admin || role == User
 }
 
 func AuthorizeRole(myRole, role string) bool {
-	if role == user {
+	if role == User {
 		return true
 	}
 
-	return myRole == superAdmin
+	return myRole == SuperAdmin
 }
 
 func ValidateName(name string) bool {

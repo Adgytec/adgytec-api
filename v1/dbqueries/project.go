@@ -97,7 +97,7 @@ SELECT
   c.token
 FROM project p
 INNER JOIN (
-  SELECT json_agg(json_build_object('id', up.user_id, 'name', u.name, 'email', u.email)) AS user_data
+  SELECT json_agg(json_build_object('userId', up.user_id, 'name', u.name, 'email', u.email)) AS user_data
   FROM user_to_project up
   INNER JOIN users u ON up.user_id = u.user_id
   WHERE up.project_id = @projectId

@@ -18,6 +18,18 @@ func CreateUserArgs(uid, email, name, role string) pgx.NamedArgs {
 // get all users
 const GetUsers = `Select * FROM users`
 
+// get all users by role
+const GetUsersByRole = `
+	Select * FROM users 
+	WHERE role = @role
+`
+
+func GetUsersByRoleArgs(role string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"role": role,
+	}
+}
+
 // get a single user by email
 const GetUserByEmail = `SELECT * FROM users where email=@email`
 

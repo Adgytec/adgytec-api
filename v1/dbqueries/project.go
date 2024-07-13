@@ -103,7 +103,7 @@ INNER JOIN (
   WHERE up.project_id = @projectId
 ) ud ON 1=1 
 INNER JOIN (
-	SELECt json_agg(json_build_object('id', sp.service_id, 'name', s.service_name)) AS service_data
+	SELECt json_agg(json_build_object('id', sp.service_id, 'name', s.service_name, 'icon', s.icon)) AS service_data
 	FROM services s 
 	INNER JOIN project_to_service sp ON sp.service_id = s.service_id
 	WHERE sp.project_id=@projectId
@@ -159,7 +159,7 @@ func DeleteServiceFromProjectArgs(serviceId, projectId string) pgx.NamedArgs {
 
 // get all services
 const GetAllServices = `
-SELECT service_name, service_id FROM services
+SELECT service_name, service_id, icon FROM services
 `
 
 // get project by user id
@@ -182,7 +182,7 @@ const GetServicesByProjectId = `
 select p.project_name, coalesce(sd.service_data, '[]'::json) as services_data
 from project p
 inner join (
-	select json_agg(json_build_object('id', s.service_id, 'name', s.service_name)) as service_data
+	select json_agg(json_build_object('id', s.service_id, 'name', s.service_name, 'icon', s.icon)) as service_data
 	from services s
 	left join project_to_service ps
 	on s.service_id = ps.service_id

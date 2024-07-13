@@ -47,6 +47,7 @@ type ProjectServiceMap struct {
 type ServicesDetails struct {
 	Name string `json:"serviceName" db:"service_name"`
 	Id   string `json:"serviceId" db:"service_id"`
+	Icon string `json:"icon" db:"icon"`
 }
 
 type ServicesByProject struct {

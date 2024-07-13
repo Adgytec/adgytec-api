@@ -103,7 +103,7 @@ INNER JOIN (
   WHERE up.project_id = @projectId
 ) ud ON 1=1 
 INNER JOIN (
-	SELECt json_agg(json_build_object('id', sp.service_id, 'name', s.service_name, 'icon', s.icon)) AS service_data
+	SELECt json_agg(json_build_object('serviceId', sp.service_id, 'serviceName', s.service_name, 'icon', s.icon)) AS service_data
 	FROM services s 
 	INNER JOIN project_to_service sp ON sp.service_id = s.service_id
 	WHERE sp.project_id=@projectId

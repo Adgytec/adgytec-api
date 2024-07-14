@@ -3,8 +3,10 @@ package dbqueries
 import "github.com/jackc/pgx/v5"
 
 // create a single user
-const CreateUser = `INSERT INTO users (user_id, name, email, role)
-					values (@userId, @name, @email, @role)`
+const CreateUser = `
+	INSERT INTO users (user_id, name, email, role)
+	VALUES (@userId, @name, @email, @role)
+`
 
 func CreateUserArgs(uid, email, name, role string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -31,7 +33,10 @@ func GetUsersByRoleArgs(role string) pgx.NamedArgs {
 }
 
 // get a single user by email
-const GetUserByEmail = `SELECT * FROM users where email=@email`
+const GetUserByEmail = `
+	SELECT * FROM users 
+	WHERE email=@email
+`
 
 func GetUserByEmailArgs(email string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -40,7 +45,10 @@ func GetUserByEmailArgs(email string) pgx.NamedArgs {
 }
 
 //get a single user by userid
-const GetUserByID = `SELECT * FROM users where user_id=@userId`
+const GetUserByID = `
+	SELECT * FROM users 
+	WHERE user_id=@userId
+`
 
 func GetUserByIDArgs(userId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -49,7 +57,10 @@ func GetUserByIDArgs(userId string) pgx.NamedArgs {
 }
 
 // delete user by id
-const DeleteUser = `DELETE FROM users WHERE user_id=@userId`
+const DeleteUser = `
+	DELETE FROM users 
+	WHERE user_id=@userId
+`
 
 // const DeleteUser = `WITH deleted_user AS(
 // 	DELETE FROM users
@@ -66,7 +77,11 @@ func DeleteUserArgs(userId string) pgx.NamedArgs {
 }
 
 // update user name
-const UpdateUserName = `UPDATE users SET name=@name WHERE user_id=@userId`
+const UpdateUserName = `
+	UPDATE users 
+	SET name=@name 
+	WHERE user_id=@userId
+`
 
 func UpdateUserNameArgs(name, userId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -76,7 +91,11 @@ func UpdateUserNameArgs(name, userId string) pgx.NamedArgs {
 }
 
 // update user name and role
-const UpdateUser = `UPDATE users SET name=@name, role=@role WHERE user_id=@userId`
+const UpdateUser = `
+	UPDATE users 
+	SET name=@name, role=@role 
+	WHERE user_id=@userId
+`
 
 func UpdateUserArgs(name, role, userId string) pgx.NamedArgs {
 	return pgx.NamedArgs{

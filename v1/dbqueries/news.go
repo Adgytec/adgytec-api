@@ -8,8 +8,10 @@ import (
 )
 
 // create news item
-const CreateNewsItem = `INSERT INTO news (title, link, text, image, project_id)
-VALUES (@title, @link, @text, @image, @projectId)`
+const CreateNewsItem = `
+	INSERT INTO news (title, link, text, image, project_id)
+	VALUES (@title, @link, @text, @image, @projectId)
+`
 
 func CreateNewsItemArgs(title, link, text, image, projectId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -23,10 +25,10 @@ func CreateNewsItemArgs(title, link, text, image, projectId string) pgx.NamedArg
 
 // get all news
 const GetAllNewsByProjectId = `
-SELECT news_id, title, link, text, image, created_at FROM news
-WHERE project_id=@projectId
-ORDER BY created_at DESC
-LIMIT @limit
+	SELECT news_id, title, link, text, image, created_at FROM news
+	WHERE project_id=@projectId
+	ORDER BY created_at DESC
+	LIMIT @limit
 `
 
 func GetAllNewsByProjectIdArgs(projectId string, limit int) pgx.NamedArgs {
@@ -37,7 +39,10 @@ func GetAllNewsByProjectIdArgs(projectId string, limit int) pgx.NamedArgs {
 }
 
 // get image by news id
-const GetNewsImageById = `SELECT image FROM news WHERE news_id=@newsId`
+const GetNewsImageById = `
+	SELECT image FROM news 
+	WHERE news_id=@newsId
+`
 
 func GetNewsImageByIdArgs(newsId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
@@ -46,7 +51,11 @@ func GetNewsImageByIdArgs(newsId string) pgx.NamedArgs {
 }
 
 // delete news
-const DeleteNewsById = `DELETE FROM news WHERE news_id=@newsId RETURNING image`
+const DeleteNewsById = `
+	DELETE FROM news 
+	WHERE news_id=@newsId 
+	RETURNING image
+`
 
 func DeleteNewsByIdArgs(newsId string) pgx.NamedArgs {
 	return pgx.NamedArgs{

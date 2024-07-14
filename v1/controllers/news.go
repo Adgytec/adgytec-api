@@ -67,7 +67,7 @@ func GetAllNewsClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 
 	var news services.News
-	all, err := news.GetAllNewsByProjectId(projectId, 5)
+	all, err := news.GetAllNewsByProjectId(projectId, 4)
 	if err != nil {
 		helper.HandleError(w, err)
 		return

@@ -164,7 +164,7 @@ SELECT service_name, service_id, icon FROM services
 
 // get project by user id
 const GetProjectByUserId = `
-	SELECT p.project_name, p.project_id, p.created_at
+	SELECT p.project_name, p.project_id, p.created_at, p.cover_image
 	FROM project p
 	LEFT JOIN user_to_project up
 	ON p.project_id = up.project_id

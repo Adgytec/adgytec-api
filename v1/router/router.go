@@ -65,7 +65,7 @@ func Router() *chi.Mux {
 		// project category management
 		r.Post("/project{projectId}/category", controllers.PostCategoryByProjectId)
 		r.Patch("/project/{projectId}/category/{categoryId}", controllers.PatchCategoryById)
-		r.Get("/project{projectId}/category", controllers.GetCategoryByProjectId)
+		r.Get("/project/{projectId}/category", controllers.GetCategoryByProjectId)
 		r.Delete("/project/{projectId}/category/{categoryId}", controllers.DeleteCategoryById)
 
 	})

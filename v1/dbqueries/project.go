@@ -13,6 +13,9 @@ const CreateProject = `
 		INSERT INTO project (project_name, cover_image, project_id)
 		VALUES (@projectName, @coverImage, @projectId)
 		RETURNING project_id
+	), insert_category as (
+		INSERT INTO category (category_id, project_id, category_name)\
+		VALUES (@projectId, @projectId, @projectName)
 	)
 	INSERT INTO client_token (token, project_id)
 	SELECT @clientToken, project_id

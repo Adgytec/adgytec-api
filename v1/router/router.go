@@ -63,14 +63,14 @@ func Router() *chi.Mux {
 		r.Delete("/project/{projectId}/services", controllers.DeleteProjectAndService)
 
 		// project category management
-		r.Post("/project{projectId}/category", controllers.PostCategoryByProjectId)
+		r.Post("/project/{projectId}/category", controllers.PostCategoryByProjectId)
 		r.Patch("/project/{projectId}/category/{categoryId}", controllers.PatchCategoryById)
 		r.Get("/project/{projectId}/category", controllers.GetCategoryByProjectId)
 		r.Delete("/project/{projectId}/category/{categoryId}", controllers.DeleteCategoryById)
 
 	})
 
-	// project module user
+	// project module users
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthentication)
 

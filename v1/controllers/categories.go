@@ -17,7 +17,7 @@ func PostCategoryByProjectId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = category.PostCategoryByProjectId(projectId)
+	item, err := category.PostCategoryByProjectId(projectId)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -26,6 +26,7 @@ func PostCategoryByProjectId(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Message = "Successfully created new category."
+	payload.Data = item
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }

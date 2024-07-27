@@ -5,6 +5,7 @@ import "github.com/jackc/pgx/v5"
 const PostCategoryByProjectId = `
 	INSERT INTO category (parent_id, project_id, category_name)
 	VALUES (@parentId, @projectId, @categoryName)
+	RETURNING category_id
 `
 
 func PostCategoryByProjectIdArgs(parentId, projectId, categoryName string) pgx.NamedArgs {

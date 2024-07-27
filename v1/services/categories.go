@@ -22,16 +22,20 @@ type CategoryDetail struct {
 	Categories json.RawMessage `json:"categories" db:"categories"`
 }
 
-func (c *Category) PostCategoryByProjectId(projectId string) error {
+type CategoryId struct {
+	CategoryId string `json:"categoryId" db:"category_id"`
+}
+
+func (c *Category) PostCategoryByProjectId(projectId string) (*CategoryId, error) {
 	if c.ParentId == "" || c.CategoryName == "" {
-		return &custom.MalformedRequest{
+		return nil, &custom.MalformedRequest{
 			Status:  http.StatusBadRequest,
 			Message: "Invalid category details",
 		}
 	}
 
 	args := dbqueries.PostCategoryByProjectIdArgs(c.ParentId, projectId, c.CategoryName)
-	_, err := db.Exec(ctx, dbqueries.PostCategoryByProjectId, args)
+	row, err := db.Query(ctx, dbqueries.PostCategoryByProjectId, args)
 	if err != nil {
 		var pgErr *pgconn.PgError
 
@@ -45,7 +49,7 @@ func (c *Category) PostCategoryByProjectId(projectId string) error {
 					message = "Invalid parent for the category."
 				}
 
-				return &custom.MalformedRequest{
+				return nil, &custom.MalformedRequest{
 					Status:  http.StatusBadRequest,
 					Message: message,
 				}
@@ -53,7 +57,7 @@ func (c *Category) PostCategoryByProjectId(projectId string) error {
 
 			if pgErr.Code == "22P02" {
 				message := "Invalid category details."
-				return &custom.MalformedRequest{
+				return nil, &custom.MalformedRequest{
 					Status:  http.StatusBadRequest,
 					Message: message,
 				}
@@ -61,10 +65,17 @@ func (c *Category) PostCategoryByProjectId(projectId string) error {
 		}
 
 		log.Printf("Error creating new category: %v/n", err)
-		return err
+		return nil, err
+	}
+	defer row.Close()
+
+	category, err := pgx.CollectOneRow(row, pgx.RowToStructByName[CategoryId])
+	if err != nil {
+		log.Printf("error reading row: %v\n", err)
+		return nil, err
 	}
 
-	return nil
+	return &category, nil
 }
 
 func (c *Category) PatchCategoryById(categoryId string) error {

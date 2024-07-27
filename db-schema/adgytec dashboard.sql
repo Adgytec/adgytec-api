@@ -97,3 +97,14 @@ CREATE TABLE "category" (
 
 ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
 ALTER TABLE "category" ADD FOREIGN KEY ("parent_id") REFERENCES "category" ("category_id") on delete cascade on update cascade;
+
+
+/* 
+    custom function and aggregate
+*/
+CREATE OR REPLACE FUNCTION jsonb_set(x jsonb, y jsonb, p text[], e jsonb, b boolean)
+RETURNS jsonb LANGUAGE sql AS $$
+SELECT CASE WHEN x IS NULL THEN e ELSE jsonb_set(x, p, e, b) END ; $$ ;
+
+CREATE OR REPLACE AGGREGATE jsonb_set_agg(x jsonb, p text[], e jsonb, b boolean)
+( STYPE = jsonb, SFUNC = jsonb_set) ;

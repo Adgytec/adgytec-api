@@ -13,6 +13,10 @@ import (
 	"github.com/rohan031/adgytec-api/v1/services"
 )
 
+type Constraint interface {
+	any
+}
+
 func DecodeJSON[T Constraint](w http.ResponseWriter, r *http.Request, maxBytes int) (T, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 

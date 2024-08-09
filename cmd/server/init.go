@@ -51,6 +51,7 @@ func initApp() (*chi.Mux, *pgxpool.Pool) {
 	if err != nil {
 		log.Fatal("Error connecting to database\n", err)
 	}
+
 	// setting database pool for use in services
 	services.SetExternalConnection(pool, minioClient, firebaseClient)
 

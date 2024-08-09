@@ -397,13 +397,32 @@ func (p *Project) GetProjectsByUserId(userId string) (*[]Project, error) {
 	}
 	defer rows.Close()
 
-	project, err := pgx.CollectRows(rows, pgx.RowToStructByName[Project])
+	projects, err := pgx.CollectRows(rows, pgx.RowToStructByName[Project])
 	if err != nil {
 		log.Printf("Error reading rows: %v\n", err)
 		return nil, err
 	}
 
-	return &project, err
+	wg := new(sync.WaitGroup)
+	urlChan := make(chan IndexedValue, len(projects))
+
+	for ind, item := range projects {
+		wg.Add(1)
+
+		img := item.Cover
+		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+	}
+
+	wg.Wait()
+	close(urlChan)
+
+	for url := range urlChan {
+		ind := url.Index
+
+		projects[ind].Cover = url.Url
+	}
+
+	return &projects, err
 }
 
 func (p *Project) GetServicesByProjectId() (*ServicesByProject, error) {

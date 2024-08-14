@@ -15,7 +15,7 @@ const CreateProject = `
 		RETURNING project_id
 	), insert_category as (
 		INSERT INTO category (category_id, project_id, category_name)
-		VALUES (@projectId, @projectId, @projectName)
+		VALUES (@projectId, @projectId, 'default')
 	)
 	INSERT INTO client_token (token, project_id)
 	SELECT @clientToken, project_id

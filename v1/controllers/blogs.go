@@ -95,7 +95,7 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 	blogId := chi.URLParam(r, "blogId")
 	userId := r.Context().Value(custom.UserID).(string)
 
-	requiredFields := []string{"title", "content", "author"}
+	requiredFields := []string{"title", "content", "author", "category"}
 	requiredFileFields := "cover"
 
 	for _, field := range requiredFields {
@@ -122,6 +122,7 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 	summary := r.FormValue("summary")
 	content := r.FormValue("content")
 	author := r.FormValue("author")
+	category := r.FormValue("category")
 
 	var blogItem services.Blog
 	blogItem.Title = title
@@ -129,6 +130,7 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 	blogItem.Id = blogId
 	blogItem.Content = content
 	blogItem.Author = author
+	blogItem.Category = category
 
 	err = blogItem.CreateBlog(r, projectId, userId)
 	if err != nil {
@@ -203,7 +205,7 @@ func GetBlogById(w http.ResponseWriter, r *http.Request) {
 func PatchBlogMetadataById(w http.ResponseWriter, r *http.Request) {
 	blogId := chi.URLParam(r, "blogId")
 
-	blogDetails, err := helper.DecodeJSON[services.BlogSummary](w, r, mb)
+	blogDetails, err := helper.DecodeJSON[services.BlogMetadata](w, r, mb)
 	if err != nil {
 		helper.HandleError(w, err)
 		return

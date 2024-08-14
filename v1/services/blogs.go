@@ -38,15 +38,24 @@ type Blog struct {
 	CreatedAt time.Time `json:"createdAt" db:"created_at"`
 	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
 	Cover     string    `json:"cover" db:"cover_image"`
+	Category  string    `json:"category" db:"category"`
 }
 
 type BlogSummary struct {
-	Title     string    `json:"title" db:"title"`
-	Summary   string    `json:"summary,omitempty" db:"short_text"`
-	Author    string    `json:"author" db:"author"`
-	Id        string    `json:"blogId" db:"blog_id"`
-	CreatedAt time.Time `json:"createdAt" db:"created_at"`
-	Cover     string    `json:"cover" db:"cover_image"`
+	Title     string          `json:"title" db:"title"`
+	Summary   string          `json:"summary,omitempty" db:"short_text"`
+	Author    string          `json:"author" db:"author"`
+	Id        string          `json:"blogId" db:"blog_id"`
+	CreatedAt time.Time       `json:"createdAt" db:"created_at"`
+	Cover     string          `json:"cover" db:"cover_image"`
+	Category  json.RawMessage `json:"category" db:"category"`
+}
+
+type BlogMetadata struct {
+	Id       string
+	Title    string
+	Summary  string
+	Category string
 }
 
 func (bm *BlogMedia) UploadMedia(r *http.Request) (error, bool) {
@@ -146,7 +155,7 @@ func addBlogToDatabase(b *Blog, projectId, userId string, wg *sync.WaitGroup, er
 	defer wg.Done()
 
 	args := dbqueries.CreateBlogItemArgs(b.Id, userId, projectId, b.Title,
-		b.Cover, b.Summary, b.Content, b.Author)
+		b.Cover, b.Summary, b.Content, b.Author, b.Category)
 
 	_, err := db.Exec(ctx, dbqueries.CreateBlogItem, args)
 	if err != nil {
@@ -344,8 +353,8 @@ func (b *Blog) GetBlogById() (*Blog, error) {
 	return &blog, nil
 }
 
-func (bs *BlogSummary) PatchBlogMetadataById() error {
-	args := dbqueries.PatchBlogMetadataByIdArgs(bs.Title, bs.Summary, bs.Id)
+func (bm *BlogMetadata) PatchBlogMetadataById() error {
+	args := dbqueries.PatchBlogMetadataByIdArgs(bm.Title, bm.Summary, bm.Id, bm.Category)
 	_, err := db.Exec(ctx, dbqueries.PatchBlogMetadataById, args)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -485,7 +494,7 @@ func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
 	// 		Message: http.StatusText(http.StatusUnsupportedMediaType),
 	// 	})
 	// }
-	
+
 	contentType, err := isImageFile(header)
 	if err != nil {
 		return err

@@ -75,7 +75,7 @@ func Router() *chi.Mux {
 		r.Use(middleware.TokenAuthentication)
 
 		r.Get("/client/projects", controllers.GetProjectsByUserId)
-		r.Get("/client/projects/{projectId}/services", controllers.GetServicesByProjectId)
+		r.Get("/client/projects/{projectId}/metadata", controllers.GetMetadataByProjectId)
 	})
 
 	// services

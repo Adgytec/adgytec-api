@@ -242,12 +242,12 @@ func GetProjectsByUserId(w http.ResponseWriter, r *http.Request) {
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
 
-func GetServicesByProjectId(w http.ResponseWriter, r *http.Request) {
+func GetMetadataByProjectId(w http.ResponseWriter, r *http.Request) {
 	projectId := chi.URLParam(r, "projectId")
 	var project services.Project
 	project.Id = projectId
 
-	data, err := project.GetServicesByProjectId()
+	data, err := project.GetMetadataByProjectId()
 	if err != nil {
 		helper.HandleError(w, err)
 		return

@@ -50,9 +50,10 @@ type ServicesDetails struct {
 	Icon string `json:"icon" db:"icon"`
 }
 
-type ServicesByProject struct {
-	Name     string          `json:"projectName" db:"project_name"`
-	Services json.RawMessage `json:"services" db:"services_data"`
+type MetaDataByProject struct {
+	Name       string          `json:"projectName" db:"project_name"`
+	Services   json.RawMessage `json:"services" db:"services_data"`
+	Categories json.RawMessage `json:"categories" db:"categories_data"`
 }
 
 type ProjectImage struct {
@@ -425,16 +426,16 @@ func (p *Project) GetProjectsByUserId(userId string) (*[]Project, error) {
 	return &projects, err
 }
 
-func (p *Project) GetServicesByProjectId() (*ServicesByProject, error) {
-	args := dbqueries.GetServicesByProjectIdArgs(p.Id)
-	rows, err := db.Query(ctx, dbqueries.GetServicesByProjectId, args)
+func (p *Project) GetMetadataByProjectId() (*MetaDataByProject, error) {
+	args := dbqueries.GetMetadataByProjectIdArgs(p.Id)
+	rows, err := db.Query(ctx, dbqueries.GetMetadataByProjectId, args)
 	if err != nil {
 		log.Printf("Error fetching project details from db: %v\n", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[ServicesByProject])
+	project, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[MetaDataByProject])
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			message := "Project with the provided ID does not exist."

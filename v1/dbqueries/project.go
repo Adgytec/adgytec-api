@@ -201,21 +201,75 @@ func GetProjectByUserIdArgs(userId string) pgx.NamedArgs {
 }
 
 // get services by project id
-const GetServicesByProjectId = `
+const GetMetadataByProjectId = `
+	with recursive elt as (
 	SELECT 
-	p.project_name, coalesce(sd.service_data, '[]'::json) AS services_data
-	FROM project p
-	inner join (
-		SELECT json_agg(json_build_object('id', s.service_id, 'name', s.service_name, 'icon', s.icon)) AS service_data
-		FROM services s
-		INNER JOIN project_to_service ps
-		ON s.service_id = ps.service_id
-		WHERE ps.project_id = @projectId
-	) sd on 1=1
-	WHERE p.project_id = @projectId
+    p.category_id AS category,
+    CASE 
+        WHEN array_agg(c.category_id) = ARRAY[NULL::uuid] THEN NULL 
+        ELSE array_agg(c.category_id) 
+    END AS sub_categories,
+    jsonb_build_object(
+        'categoryId', p.category_id,
+        'categoryName', p.category_name,
+        'subCategories', array_remove(
+            array_agg(
+                CASE
+                    WHEN c.category_id IS NOT NULL AND c.category_name IS NOT NULL THEN
+                        jsonb_build_object(
+                            'categoryId', c.category_id,
+                            'categoryName', c.category_name
+                        )
+                    ELSE NULL
+                END
+            ), 
+            NULL
+        )
+    ) AS json_tree
+FROM 
+    category AS p
+LEFT JOIN 
+    category AS c ON p.category_id = c.parent_id
+where p.project_id = @projectId
+GROUP BY 
+    p.category_id, p.category_name
+
+),
+list (category, json_tree, sub_categories, rank, path) AS
+(
+SELECT c.category, c.json_tree, c.sub_categories, 1, '{}' :: text[]
+  FROM elt AS c
+  LEFT JOIN elt AS f
+    ON array[c.category] <@ f.sub_categories
+ WHERE f.category IS NULL
+UNION ALL
+SELECT c.category
+     , c.json_tree
+     , c.sub_categories
+     , f.rank + 1
+     , f.path || array['subCategories',(array_position(f.sub_categories, c.category)-1) :: text]
+  FROM list AS f
+ INNER JOIN elt AS c
+    ON array[c.category] <@ f.sub_categories
+)
+SELECT 
+p.project_name, coalesce(sd.service_data, '[]'::jsonb) AS services_data, coalesce(jsonb_set_agg(NULL :: jsonb, path, l.json_tree, true ORDER BY rank ASC), '[]'::jsonb) as categories_data
+FROM project p
+inner join list l on 1 =1
+inner join (
+	SELECT jsonb_agg(jsonb_build_object('id', s.service_id, 'name', s.service_name, 'icon', s.icon)) AS service_data
+	FROM services s
+	INNER JOIN project_to_service ps
+	ON s.service_id = ps.service_id
+	WHERE ps.project_id = @projectId
+) sd on 1=1
+WHERE p.project_id = @projectId
+group by p.project_name, sd.service_data
+
+
 `
 
-func GetServicesByProjectIdArgs(projectId string) pgx.NamedArgs {
+func GetMetadataByProjectIdArgs(projectId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 	}

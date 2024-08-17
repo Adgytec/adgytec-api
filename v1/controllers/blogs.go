@@ -140,7 +140,7 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Message = "Successfully created the blog"
+	payload.Message = "Successfully added new blog"
 
 	helper.EncodeJSON(w, http.StatusCreated, payload)
 }

@@ -16,6 +16,19 @@ func PostAlbumByProjectIdArgs(projectId, name, cover string) pgx.NamedArgs {
 	}
 }
 
+const GetAlbumsByProjectId = `
+	SELECT album_id, name, cover, created_at 
+	FROM album
+	WHERE 
+	project_id = @projectId
+`
+
+func GetAlbumsByProjectIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
+}
+
 const DeleteAlbumById = `
 	DELETE FROM album
 	WHERE

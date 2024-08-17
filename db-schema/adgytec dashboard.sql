@@ -65,7 +65,7 @@ CREATE TABLE "news" (
     "created_at" timestamp DEFAULT (now())
 );
 
-ALTER TABLE "news" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "news" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
 
 /* blogs */
 CREATE TABLE "blogs" (
@@ -82,7 +82,7 @@ CREATE TABLE "blogs" (
   "updated_at" timestamp DEFAULT (now())
 );
 
-ALTER TABLE "blogs" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "blogs" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
 ALTER TABLE "blogs" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
 ALTER TABLE "blogs" ADD FOREIGN KEY ("category_id") REFERENCES "category" ("category_id") on update cascade;
 
@@ -95,7 +95,7 @@ CREATE TABLE "category" (
   "created_at" timestamp DEFAULT (now())
 );
 
-ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
 ALTER TABLE "category" ADD FOREIGN KEY ("parent_id") REFERENCES "category" ("category_id") on delete cascade on update cascade;
 
 
@@ -122,5 +122,5 @@ CREATE TABLE "album" (
 	"created_at" timestamp DEFAULT(now())
 )
 
-ALTER TABLE "album" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "album" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
 ALTER TABLE "album" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;

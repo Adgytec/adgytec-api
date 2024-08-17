@@ -95,7 +95,7 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 	blogId := chi.URLParam(r, "blogId")
 	userId := r.Context().Value(custom.UserID).(string)
 
-	requiredFields := []string{"title", "content", "author", "category"}
+	requiredFields := []string{"title", "content", "category"}
 	requiredFileFields := "cover"
 
 	for _, field := range requiredFields {
@@ -107,15 +107,6 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-	}
-
-	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
-		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
-		helper.HandleError(w, &custom.MalformedRequest{
-			Status:  http.StatusBadRequest,
-			Message: message,
-		})
-		return
 	}
 
 	title := r.FormValue("title")
@@ -132,7 +123,19 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 	blogItem.Author = author
 	blogItem.Category = category
 
-	err = blogItem.CreateBlog(r, projectId, userId)
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		// message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		// helper.HandleError(w, &custom.MalformedRequest{
+		// 	Status:  http.StatusBadRequest,
+		// 	Message: message,
+		// })
+		// return
+		err = blogItem.CreateBlogWithoutCover(projectId, userId)
+	} else {
+		err = blogItem.CreateBlog(r, projectId, userId)
+	}
+
+	// err = blogItem.CreateBlog(r, projectId, userId)
 	if err != nil {
 		helper.HandleError(w, err)
 		return

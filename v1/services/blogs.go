@@ -164,6 +164,18 @@ func addBlogToDatabase(b *Blog, projectId, userId string, wg *sync.WaitGroup, er
 	errChan <- err
 }
 
+func (b *Blog) CreateBlogWithoutCover(projectId, userId string) error {
+	args := dbqueries.CreateBlogItemArgs(b.Id, userId, projectId, b.Title,
+		b.Cover, b.Summary, b.Content, b.Author, b.Category)
+
+	_, err := db.Exec(ctx, dbqueries.CreateBlogItem, args)
+	if err != nil {
+		log.Printf("Error adding blog item in database: %v\n", err)
+	}
+
+	return err
+}
+
 func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 	file, header, err := r.FormFile("cover")
 	if err != nil {
@@ -244,10 +256,13 @@ func (b *Blog) GetBlogsByProjectId(projectId string) (*[]BlogSummary, error) {
 	urlChan := make(chan IndexedValue, len(blogs))
 
 	for ind, item := range blogs {
-		wg.Add(1)
-
 		img := item.Cover
-		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+
+		if len(img) > 0 {
+			wg.Add(1)
+
+			go generatePresignedUrl(img, ind, expires, wg, urlChan)
+		}
 	}
 
 	wg.Wait()

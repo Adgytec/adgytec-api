@@ -144,3 +144,13 @@ func generatePresignedUrl(objectName string, ind int, expires time.Duration, wg 
 func GenerateUUID() uuid.UUID {
 	return uuid.New()
 }
+
+func deleteFromCloudStorage(objectName string) error {
+	err := spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, minio.RemoveObjectOptions{})
+	if err != nil {
+		log.Printf("Error deleting image from space storage: %v\n", err)
+		return err
+	}
+
+	return nil
+}

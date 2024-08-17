@@ -15,7 +15,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
 )
@@ -139,6 +138,8 @@ func (p *Project) CreateProject(r *http.Request) error {
 
 	for err := range errchan {
 		if err != nil {
+			go deleteFromCloudStorage(objectName)
+			go p.DeleteProjectById()
 			return err
 		}
 	}
@@ -249,11 +250,12 @@ func (p *Project) DeleteProjectById() error {
 	}
 
 	// delete from space storage
-	err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), project.Cover, minio.RemoveObjectOptions{})
-	if err != nil {
-		log.Printf("Error deleting image from space storage: %v\n", err)
-		// return err
-	}
+	// err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), project.Cover, minio.RemoveObjectOptions{})
+	// if err != nil {
+	// 	log.Printf("Error deleting image from space storage: %v\n", err)
+	// 	// return err
+	// }
+	err = deleteFromCloudStorage(project.Cover)
 
 	return nil
 }

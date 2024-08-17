@@ -164,11 +164,12 @@ func (n *News) DeleteNews() error {
 	}
 
 	// delete from space storage
-	err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), news.Image, minio.RemoveObjectOptions{})
-	if err != nil {
-		log.Printf("Error deleting image from space storage: %v\n", err)
-		// return err
-	}
+	// err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), news.Image, minio.RemoveObjectOptions{})
+	// if err != nil {
+	// 	log.Printf("Error deleting image from space storage: %v\n", err)
+	// 	// return err
+	// }
+	err = deleteFromCloudStorage(news.Image)
 
 	return nil
 }

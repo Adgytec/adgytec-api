@@ -214,6 +214,7 @@ func handleAlbumCoverDatabase(cover, albumId string, wg *sync.WaitGroup, errChan
 
 	errChan <- nil
 }
+
 func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 	file, header, err := r.FormFile("cover")
 	if err != nil {
@@ -265,4 +266,41 @@ func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 	}
 
 	return nil
+}
+
+func (a *Album) GetAlbumsByProjectId(projectId string) (*[]Album, error) {
+	args := dbqueries.GetAlbumsByProjectIdArgs(projectId)
+	rows, err := db.Query(ctx, dbqueries.GetAlbumsByProjectId, args)
+
+	if err != nil {
+		log.Printf("Error fetching albums from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	albums, err := pgx.CollectRows(rows, pgx.RowToStructByName[Album])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	wg := new(sync.WaitGroup)
+	urlChan := make(chan IndexedValue, len(albums))
+
+	for ind, item := range albums {
+		wg.Add(1)
+
+		img := item.Cover
+		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+	}
+
+	wg.Wait()
+	close(urlChan)
+
+	for url := range urlChan {
+		ind := url.Index
+		albums[ind].Cover = url.Url
+	}
+
+	return &albums, nil
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/dbqueries"
 )
@@ -100,10 +101,55 @@ func (a *Album) CreateAlbum(r *http.Request, projectId, userId string) error {
 	for err := range errChan {
 		if err != nil {
 			go deleteFromCloudStorage(objectName)
-			// func to delete from db
+			go a.DeleteAlbumById(projectId)
 			return err
 		}
 	}
+
+	return nil
+}
+
+func deleteImagesFromAlbum(albumId, projectId string) {
+	objectsCh := make(chan minio.ObjectInfo)
+	objectName := fmt.Sprintf("services/gallery/%v/%v/", projectId, albumId)
+	if val := os.Getenv("ENV"); val == "dev" {
+		objectName = "dev/" + objectName
+	}
+
+	go func() {
+		defer close(objectsCh)
+		// List all objects from a bucket-name with a matching prefix.
+		for object := range spaceStorage.ListObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), minio.ListObjectsOptions{
+			Prefix:    objectName,
+			Recursive: true,
+		}) {
+			if object.Err != nil {
+				log.Fatalln(object.Err)
+			}
+			objectsCh <- object
+		}
+	}()
+
+	opts := minio.RemoveObjectsOptions{
+		GovernanceBypass: true,
+	}
+
+	for rErr := range spaceStorage.RemoveObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectsCh, opts) {
+		fmt.Println("Error detected during deletion: ", rErr)
+	}
+
+}
+
+func (a *Album) DeleteAlbumById(projectId string) error {
+	args := dbqueries.DeleteAlbumByIdArgs(a.Id)
+	_, err := db.Exec(ctx, dbqueries.DeleteAlbumById, args)
+	if err != nil {
+		log.Printf("Error deleting album from db: %v\n", err)
+		return err
+	}
+
+	// delete everything in that album
+	go deleteImagesFromAlbum(a.Id, projectId)
 
 	return nil
 }

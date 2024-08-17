@@ -95,7 +95,7 @@ CREATE TABLE "category" (
   "created_at" timestamp DEFAULT (now())
 );
 
-ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
+ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
 ALTER TABLE "category" ADD FOREIGN KEY ("parent_id") REFERENCES "category" ("category_id") on delete cascade on update cascade;
 
 

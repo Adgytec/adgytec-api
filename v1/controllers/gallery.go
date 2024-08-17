@@ -117,3 +117,61 @@ func PatchAlbumMetadataById(w http.ResponseWriter, r *http.Request) {
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
+
+func PatchAlbumCoverById(w http.ResponseWriter, r *http.Request) {
+	maxSize := 10 << 20 // 10mb
+	err := helper.ParseMultipartForm(w, r, maxSize)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	requiredFileFields := "cover"
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	projectId := chi.URLParam(r, "projectId")
+	albumId := chi.URLParam(r, "albumId")
+
+	var album services.Album
+
+	album.Id = albumId
+	err = album.PatchAlbumCoverById(r, projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "successfully updated album cover image"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}
+
+func DeleteAlbumById(w http.ResponseWriter, r *http.Request) {
+	albumId := chi.URLParam(r, "albumId")
+	projectId := chi.URLParam(r, "projectId")
+
+	var album services.Album
+	album.Id = albumId
+
+	err := album.DeleteAlbumById(projectId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "successfully deleted the album"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}

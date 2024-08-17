@@ -427,7 +427,9 @@ func deleteBlogMedia(projectId, blogId string) {
 func (b *Blog) DeleteBlogById(projectId string) error {
 
 	err := deleteBlogFromDatabase(b)
-	go deleteBlogMedia(projectId, b.Id)
+	if err == nil {
+		go deleteBlogMedia(projectId, b.Id)
+	}
 
 	return err
 }

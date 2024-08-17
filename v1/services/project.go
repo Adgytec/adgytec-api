@@ -245,6 +245,17 @@ func (p *Project) DeleteProjectById() error {
 			return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
 
 		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			// foreign key violation code 23503
+			if pgErr.Code == "23503" {
+				message := "You need to delete all the services data inorder to delete the project."
+				return &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+
+			}
+		}
+
 		log.Printf("Error reading rows: %v\n", err)
 		return err
 	}

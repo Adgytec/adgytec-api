@@ -89,6 +89,10 @@ func Router() *chi.Mux {
 		// blogs
 		r.Get("/services/blogs", controllers.GetAllBlogsByProjectIdClient)
 		r.Get("/services/blog/{blogId}", controllers.GetBlogById)
+
+		// gallery
+		r.Get("/services/gallery/albums", controllers.GetAlbumsByProjectIdClient)
+		// r.Get("/services/gallery/album/{albumId}")
 	})
 
 	// getting uuid
@@ -122,7 +126,7 @@ func Router() *chi.Mux {
 		r.Patch("/services/blogs/{projectId}/{blogId}/content", controllers.PatchBlogContent)
 
 		// gallery
-		r.Get("/services/gallery/{projectId}", controllers.GetAlbumsByProjectId)
+		r.Get("/services/gallery/albums/{projectId}", controllers.GetAlbumsByProjectId)
 	})
 
 	// general public route

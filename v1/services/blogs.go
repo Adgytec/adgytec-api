@@ -470,12 +470,7 @@ func handleBlogCoverDatabase(cover, blogid string, wg *sync.WaitGroup, errChan c
 		return
 	}
 
-	go func() {
-		err = spaceStorage.RemoveObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), prevPath.Image, minio.RemoveObjectOptions{})
-		if err != nil {
-			log.Printf("Error deleting image from space storage: %v\n", err)
-		}
-	}()
+	go deleteFromCloudStorage(prevPath.Image)
 
 	errChan <- nil
 }

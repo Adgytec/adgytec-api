@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
@@ -150,6 +151,118 @@ func (a *Album) DeleteAlbumById(projectId string) error {
 
 	// delete everything in that album
 	go deleteImagesFromAlbum(a.Id, projectId)
+
+	return nil
+}
+
+func (a *Album) PatchAlbumMetadataById() error {
+	args := dbqueries.PatchAlbumMetadataByIdArgs(a.Id, a.Name)
+	_, err := db.Exec(ctx, dbqueries.PatchAlbumMetadataById, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid album to update."
+				return &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			}
+		}
+
+		log.Printf("Error updating blog data: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+func handleAlbumCoverDatabase(cover, albumId string, wg *sync.WaitGroup, errChan chan error) {
+	defer wg.Done()
+
+	args := dbqueries.PatchAlbumCoverByIdArgs(albumId, cover)
+	rows, err := db.Query(ctx, dbqueries.PatchAlbumCoverById, args)
+	if err != nil {
+		log.Printf("error updating cover image in db: %v\n", err)
+		errChan <- err
+		return
+	}
+	defer rows.Close()
+
+	prevPath, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[struct {
+		Image string `db:"image"`
+	}])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "album with the following id doesn't exist"
+			errChan <- &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+			return
+		}
+
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid album id."
+				errChan <- &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+				return
+			}
+		}
+
+		log.Printf("Error reading rows: %v\n", err)
+		errChan <- nil
+		return
+	}
+
+	go deleteFromCloudStorage(prevPath.Image)
+
+	errChan <- nil
+}
+func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
+	file, header, err := r.FormFile("cover")
+	if err != nil {
+		log.Printf("Error retriving file: %v\n ", err)
+		return err
+	}
+
+	defer file.Close()
+
+	contentType, err := isImageFile(header)
+	if err != nil {
+		return err
+	}
+
+	img, format, err := image.Decode(file)
+	if err != nil {
+		log.Printf("Error decoding image: %v\n", err)
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	err = handleImage(img, buf, format)
+	if err != nil {
+		return err
+	}
+
+	objectName := fmt.Sprintf("services/gallery/%v/%v/%v.%v", projectId, a.Id, generateRandomString(), format)
+
+	if val := os.Getenv("ENV"); val == "dev" {
+		objectName = "dev/" + objectName
+	}
+	a.Cover = objectName
+
+	wg := new(sync.WaitGroup)
+	errChan := make(chan error, 2)
+
+	wg.Add(2)
+
+	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go handleAlbumCoverDatabase(objectName, a.Id, wg, errChan)
+
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

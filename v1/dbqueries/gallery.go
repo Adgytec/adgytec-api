@@ -58,10 +58,17 @@ func PatchAlbumMetadataByIdArgs(albumId, name string) pgx.NamedArgs {
 }
 
 const PatchAlbumCoverById = `
+	WITH cover AS (
+		SELECT cover as image
+		FROM album 
+		WHERE album_id = @albumId
+	)
 	UPDATE album
-	SET cover = @cover
-	WHERE
-	album_id = @albumId
+	SET cover  = @cover
+	WHERE album_id = @albumId
+	RETURNING (
+		SELECT image FROM cover
+	)
 `
 
 func PatchAlbumCoverByIdArgs(albumId, cover string) pgx.NamedArgs {

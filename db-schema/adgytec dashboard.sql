@@ -107,4 +107,18 @@ RETURNS jsonb LANGUAGE sql AS $$
 SELECT CASE WHEN x IS NULL THEN e ELSE jsonb_set(x, p, e, b) END ; $$ ;
 
 CREATE OR REPLACE AGGREGATE jsonb_set_agg(x jsonb, p text[], e jsonb, b boolean)
-( STYPE = jsonb, SFUNC = jsonb_set) ;
+( STYPE = jsonb, SFUNC = jsonb_set);
+
+
+/* gallery */
+
+/* album */
+CREATE TABLE "album" (
+	"album_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"project_id" uuid NOT NULL,
+	"name" varchar NOT NULL,
+	"cover" varchar NOT NULL,
+	"created_at" timestamp DEFAULT(now())
+)
+
+ALTER TABLE "album" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;

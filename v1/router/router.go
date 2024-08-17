@@ -120,6 +120,9 @@ func Router() *chi.Mux {
 		r.Delete("/services/blogs/{projectId}/{blogId}", controllers.DeleteBlogById)
 		r.Patch("/services/blogs/{projectId}/{blogId}/cover", controllers.PatchBlogCover)
 		r.Patch("/services/blogs/{projectId}/{blogId}/content", controllers.PatchBlogContent)
+
+		// gallery
+		r.Get("/services/gallery/{projectId}", controllers.GetAlbumsByProjectId)
 	})
 
 	// general public route

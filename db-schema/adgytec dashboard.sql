@@ -116,9 +116,11 @@ CREATE OR REPLACE AGGREGATE jsonb_set_agg(x jsonb, p text[], e jsonb, b boolean)
 CREATE TABLE "album" (
 	"album_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
 	"project_id" uuid NOT NULL,
+    "user_id" varchar NOT NULL,
 	"name" varchar NOT NULL,
 	"cover" varchar NOT NULL,
 	"created_at" timestamp DEFAULT(now())
 )
 
 ALTER TABLE "album" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "album" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;

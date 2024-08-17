@@ -3,16 +3,17 @@ package dbqueries
 import "github.com/jackc/pgx/v5"
 
 const PostAlbumByProjectId = `
-	INSERT INTO album (project_id, name, cover)
+	INSERT INTO album (project_id, name, cover, user_id)
 	VALUES
-	(@projectId, @name, @cover);
+	(@projectId, @name, @cover, @userId);
 `
 
-func PostAlbumByProjectIdArgs(projectId, name, cover string) pgx.NamedArgs {
+func PostAlbumByProjectIdArgs(projectId, userId, name, cover string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 		"name":      name,
 		"cover":     cover,
+		"userId":    userId,
 	}
 }
 

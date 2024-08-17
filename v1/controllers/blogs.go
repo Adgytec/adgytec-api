@@ -179,7 +179,6 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	payload.Data = all
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
-
 }
 
 func GetBlogById(w http.ResponseWriter, r *http.Request) {

@@ -169,7 +169,7 @@ func (n *News) DeleteNews() error {
 	// 	log.Printf("Error deleting image from space storage: %v\n", err)
 	// 	// return err
 	// }
-	err = deleteFromCloudStorage(news.Image)
+	go deleteFromCloudStorage(news.Image)
 
 	return nil
 }

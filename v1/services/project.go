@@ -255,7 +255,7 @@ func (p *Project) DeleteProjectById() error {
 	// 	log.Printf("Error deleting image from space storage: %v\n", err)
 	// 	// return err
 	// }
-	err = deleteFromCloudStorage(project.Cover)
+	go deleteFromCloudStorage(project.Cover)
 
 	return nil
 }

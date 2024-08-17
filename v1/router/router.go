@@ -126,7 +126,9 @@ func Router() *chi.Mux {
 		r.Patch("/services/blogs/{projectId}/{blogId}/content", controllers.PatchBlogContent)
 
 		// gallery
-		r.Get("/services/gallery/albums/{projectId}", controllers.GetAlbumsByProjectId)
+		r.Get("/services/gallery/{projectId}/albums", controllers.GetAlbumsByProjectId)
+		r.Post("/srevices/gallery/{projectId}/albums", controllers.PostAlbum)
+		r.Patch("/services/gallery/{projectId}/albums/{albumId}/metadata", controllers.PatchAlbumMetadataById)
 	})
 
 	// general public route

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -39,6 +40,80 @@ func GetAlbumsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func PostAlbum(w http.ResponseWriter, r *http.Request) {
+	maxSize := 10 << 20 // 20mb
+	err := helper.ParseMultipartForm(w, r, maxSize)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	projectId := chi.URLParam(r, "projectId")
+	userId := r.Context().Value(custom.UserID).(string)
+
+	requiredFields := []string{"name"}
+	requiredFileFields := "cover"
+
+	for _, field := range requiredFields {
+		if _, ok := r.MultipartForm.Value[field]; !ok {
+			message := fmt.Sprintf("Missing required field: %s", field)
+			helper.HandleError(w, &custom.MalformedRequest{
+				Status:  http.StatusBadRequest,
+				Message: message,
+			})
+			return
+		}
+	}
+
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	name := r.FormValue("name")
+	var albumItem services.Album
+	albumItem.Name = name
+
+	err = albumItem.CreateAlbum(r, projectId, userId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully created the album"
+
+	helper.EncodeJSON(w, http.StatusCreated, payload)
+}
+
+func PatchAlbumMetadataById(w http.ResponseWriter, r *http.Request) {
+	albumId := chi.URLParam(r, "albumId")
+
+	albumDetails, err := helper.DecodeJSON[services.Album](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	albumDetails.Id = albumId
+	err = albumDetails.PatchAlbumMetadataById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "successfully updated album data"
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

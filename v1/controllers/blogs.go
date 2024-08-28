@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -154,6 +155,11 @@ func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 	projectId := chi.URLParam(r, "projectId")
 	cursor := r.URL.Query().Get("cursor")
 
+	if len(cursor) == 0 {
+		today := time.Now()
+		cursor = today.Format(time.RFC3339)
+	}
+
 	var blogs services.Blog
 	all, err := blogs.GetBlogsByProjectId(projectId, cursor)
 	if err != nil {
@@ -173,10 +179,13 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 	cursor := r.URL.Query().Get("cursor")
 
+	log.Printf("cursor value: %v\n", cursor)
 	if len(cursor) == 0 {
 		today := time.Now()
 		isoDate := today.Format(time.RFC3339)
 		cursor = isoDate
+
+		log.Println(cursor)
 	}
 
 	var blogs services.Blog

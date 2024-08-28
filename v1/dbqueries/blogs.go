@@ -37,12 +37,15 @@ const GetBlogsByProjectId = `
 	LEFT JOIN category c
 	ON c.category_id = b.category_id
 	WHERE b.project_id = @projectId
+	AND b.created_at < @createdAt
 	ORDER BY b.created_at DESC
+	LIMIT 20
 `
 
-func GetBlogsByProjectIdArgs(projectId string) pgx.NamedArgs {
+func GetBlogsByProjectIdArgs(projectId, createdAt string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
+		"createdAt": createdAt,
 	}
 }
 

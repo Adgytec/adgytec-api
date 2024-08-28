@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -151,9 +152,10 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 // only title, author, created_at, summary, cover image
 func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 	projectId := chi.URLParam(r, "projectId")
+	cursor := r.URL.Query().Get("cursor")
 
 	var blogs services.Blog
-	all, err := blogs.GetBlogsByProjectId(projectId)
+	all, err := blogs.GetBlogsByProjectId(projectId, cursor)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -169,9 +171,16 @@ func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 
 func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
+	cursor := r.URL.Query().Get("cursor")
+
+	if len(cursor) == 0 {
+		today := time.Now()
+		isoDate := today.Format(time.RFC3339)
+		cursor = isoDate
+	}
 
 	var blogs services.Blog
-	all, err := blogs.GetBlogsByProjectId(projectId)
+	all, err := blogs.GetBlogsByProjectId(projectId, cursor)
 	if err != nil {
 		helper.HandleError(w, err)
 		return

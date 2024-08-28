@@ -236,8 +236,8 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 	return nil
 }
 
-func (b *Blog) GetBlogsByProjectId(projectId string) (*[]BlogSummary, error) {
-	args := dbqueries.GetBlogsByProjectIdArgs(projectId)
+func (b *Blog) GetBlogsByProjectId(projectId, createdAt string) (*[]BlogSummary, error) {
+	args := dbqueries.GetBlogsByProjectIdArgs(projectId, createdAt)
 	rows, err := db.Query(ctx, dbqueries.GetBlogsByProjectId, args)
 
 	if err != nil {

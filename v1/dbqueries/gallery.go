@@ -23,11 +23,15 @@ const GetAlbumsByProjectId = `
 	FROM album
 	WHERE 
 	project_id = @projectId
+	AND
+	created_at < @createdAt
+	LIMIT 20
 `
 
-func GetAlbumsByProjectIdArgs(projectId string) pgx.NamedArgs {
+func GetAlbumsByProjectIdArgs(projectId, createdAt string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
+		"createdAt": createdAt,
 	}
 }
 

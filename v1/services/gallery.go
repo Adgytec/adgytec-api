@@ -268,8 +268,8 @@ func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 	return nil
 }
 
-func (a *Album) GetAlbumsByProjectId(projectId string) (*[]Album, error) {
-	args := dbqueries.GetAlbumsByProjectIdArgs(projectId)
+func (a *Album) GetAlbumsByProjectId(projectId, cursor string) (*[]Album, error) {
+	args := dbqueries.GetAlbumsByProjectIdArgs(projectId, cursor)
 	rows, err := db.Query(ctx, dbqueries.GetAlbumsByProjectId, args)
 
 	if err != nil {

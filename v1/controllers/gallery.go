@@ -3,7 +3,6 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rohan031/adgytec-api/helper"
@@ -16,8 +15,7 @@ func GetAlbumsByProjectId(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 
 	if len(cursor) == 0 {
-		today := time.Now()
-		cursor = today.Format(time.RFC3339)
+		cursor = getNow()
 	}
 
 	var albums services.Album
@@ -39,8 +37,7 @@ func GetAlbumsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 
 	if len(cursor) == 0 {
-		today := time.Now()
-		cursor = today.Format(time.RFC3339)
+		cursor = getNow()
 	}
 
 	var albums services.Album

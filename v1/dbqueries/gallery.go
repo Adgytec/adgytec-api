@@ -25,6 +25,7 @@ const GetAlbumsByProjectId = `
 	project_id = @projectId
 	AND
 	created_at < @createdAt
+	ORDER BY created_at DESC
 	LIMIT 20
 `
 

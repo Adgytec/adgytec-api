@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -156,8 +155,7 @@ func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 
 	if len(cursor) == 0 {
-		today := time.Now()
-		cursor = today.Format(time.RFC3339)
+		cursor = getNow()
 	}
 
 	var blogs services.Blog
@@ -181,11 +179,7 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("cursor value: %v\n", cursor)
 	if len(cursor) == 0 {
-		today := time.Now()
-		isoDate := today.Format(time.RFC3339)
-		cursor = isoDate
-
-		log.Println(cursor)
+		cursor = getNow()
 	}
 
 	var blogs services.Blog

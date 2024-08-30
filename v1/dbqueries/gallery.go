@@ -87,16 +87,17 @@ func PatchAlbumCoverByIdArgs(albumId, cover string) pgx.NamedArgs {
 
 // photos
 const PostPhotoByAlbumId = `
-	INSERT INTO photos (photo_id, album_id, path)
+	INSERT INTO photos (photo_id, album_id, path, user_id)
 	VALUES
-	(@photoId, @albumId, @path)
+	(@photoId, @albumId, @path, @userId)
 `
 
-func PostPhotoByAlbumIdArgs(photoId, albumId, path string) pgx.NamedArgs {
+func PostPhotoByAlbumIdArgs(photoId, albumId, path, userId string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"photoId": photoId,
 		"albumId": albumId,
 		"path":    path,
+		"userId":  userId,
 	}
 }
 
@@ -121,6 +122,7 @@ const DeletePhotosById = `
 	DELETE FROM photos
 	WHERE 
 	photo_id = ANY(@photoIds)
+	RETURNING path
 `
 
 func DeletePhotosByIdArgs(photoIds []string) pgx.NamedArgs {

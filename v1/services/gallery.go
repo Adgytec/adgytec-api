@@ -353,7 +353,7 @@ func addPhotoToDatabase(p *Photos, userId, albumId string, wg *sync.WaitGroup, e
 }
 
 func (p *Photos) PostPhotoByAlbumId(r *http.Request, projectId, albumId, userId string) (string, error) {
-	file, header, err := r.FormFile("cover")
+	file, header, err := r.FormFile("photo")
 	if err != nil {
 		log.Printf("Error retriving file: %v\n ", err)
 		return "", err

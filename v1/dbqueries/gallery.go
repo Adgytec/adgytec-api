@@ -101,6 +101,18 @@ func PostPhotoByAlbumIdArgs(photoId, albumId, path, userId string) pgx.NamedArgs
 	}
 }
 
+const GetAlbumNameById = `
+	SELECT name
+	FROM album
+	WHERE album_id = @albumId
+`
+
+func GetAlbumNameByIdArgs(albumId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"albumId": albumId,
+	}
+}
+
 const GetPhotosByAlbumId = `
 	SELECT photo_id, path, created_at
 	FROM photos

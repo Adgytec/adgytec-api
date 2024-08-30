@@ -1,6 +1,8 @@
 package dbqueries
 
-import "github.com/jackc/pgx/v5"
+import (
+	"github.com/jackc/pgx/v5"
+)
 
 const PostAlbumByProjectId = `
 	INSERT INTO album (album_id, project_id, name, cover, user_id)
@@ -80,5 +82,50 @@ func PatchAlbumCoverByIdArgs(albumId, cover string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"albumId": albumId,
 		"cover":   cover,
+	}
+}
+
+// photos
+const PostPhotoByAlbumId = `
+	INSERT INTO photos (photo_id, album_id, path)
+	VALUES
+	(@photoId, @albumId, @path)
+`
+
+func PostPhotoByAlbumIdArgs(photoId, albumId, path string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"photoId": photoId,
+		"albumId": albumId,
+		"path":    path,
+	}
+}
+
+const GetPhotosByAlbumId = `
+	SELECT photo_id, path, created_at
+	FROM photos
+	WHERE
+	album_id = @albumId
+	AND created_at < @createdAt
+	ORDER BY created_at DESC
+	LIMIT 20
+`
+
+func GetPhotosByAlbumIdArgs(albumId, createdAt string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"albumId":   albumId,
+		"createdAt": createdAt,
+	}
+}
+
+const DeletePhotosById = `
+	DELETE FROM photos
+	WHERE 
+	photo_id = ANY(@photoIds)
+`
+
+func DeletePhotosByIdArgs(photoIds []string) pgx.NamedArgs {
+
+	return pgx.NamedArgs{
+		"photoIds": photoIds,
 	}
 }

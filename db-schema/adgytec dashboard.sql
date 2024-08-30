@@ -124,3 +124,13 @@ CREATE TABLE "album" (
 
 ALTER TABLE "album" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
 ALTER TABLE "album" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+
+/* photos */
+CREATE TABLE "photos" (
+    "photo_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+    "album_id" uuid NOT NULL,
+    "path" varchar NOT NULL,
+    "created_at" timestamp DEFAULT(now())
+)
+
+ALTER TABLE "photos" ADD FOREIGN KEY ("album_id") REFERENCES "album" ("album_id") on update cascade on delete cascade;

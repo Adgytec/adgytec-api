@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const mb = 1048576
+const mb = 1 << 20
 
 var ctx = context.Background()
 

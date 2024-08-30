@@ -110,8 +110,8 @@ func Router() *chi.Mux {
 		// news
 		r.Post("/services/news/{projectId}", controllers.PostNews)
 		r.Get("/services/news/{projectId}", controllers.GetNews)
-		r.Put("/services/news/{projectId}/{serviceId}", controllers.PutNews)
-		r.Delete("/services/news/{projectId}/{serviceId}", controllers.DeleteNews)
+		r.Put("/services/news/{projectId}/{newsId}", controllers.PutNews)
+		r.Delete("/services/news/{projectId}/{newsId}", controllers.DeleteNews)
 		r.Delete("/services/news/{projectId}", controllers.DeleteNewsMultiple)
 
 		// blogs

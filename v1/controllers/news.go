@@ -98,10 +98,10 @@ func GetNews(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteNews(w http.ResponseWriter, r *http.Request) {
-	serviceId := chi.URLParam(r, "serviceId")
+	newsId := chi.URLParam(r, "newsId")
 
 	var news services.News
-	news.Id = serviceId
+	news.Id = newsId
 
 	err := news.DeleteNews()
 	if err != nil {
@@ -138,7 +138,7 @@ func DeleteNewsMultiple(w http.ResponseWriter, r *http.Request) {
 }
 
 func PutNews(w http.ResponseWriter, r *http.Request) {
-	serviceId := chi.URLParam(r, "serviceId")
+	newsId := chi.URLParam(r, "newsId")
 
 	newsDetails, err := helper.DecodeJSON[services.NewsPut](w, r, mb)
 	if err != nil {
@@ -155,7 +155,7 @@ func PutNews(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newsDetails.Id = serviceId
+	newsDetails.Id = newsId
 	err = newsDetails.NewsUpdate()
 	if err != nil {
 		helper.HandleError(w, err)
@@ -164,7 +164,7 @@ func PutNews(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Message = fmt.Sprintf("Successfully updated news with id: %v", serviceId)
+	payload.Message = fmt.Sprintf("Successfully updated news with id: %v", newsId)
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 

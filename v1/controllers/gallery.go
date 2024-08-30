@@ -55,7 +55,7 @@ func GetAlbumsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostAlbum(w http.ResponseWriter, r *http.Request) {
-	maxSize := 10 << 20 // 20mb
+	maxSize := 10 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)
@@ -182,6 +182,91 @@ func DeleteAlbumById(w http.ResponseWriter, r *http.Request) {
 	var payload services.JSONResponse
 	payload.Error = false
 	payload.Message = "successfully deleted the album"
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+// photos
+func GetPhotosByAlbumId(w http.ResponseWriter, r *http.Request) {
+	albumId := chi.URLParam(r, "albumId")
+	cursor := r.URL.Query().Get("cursor")
+
+	if len(cursor) == 0 {
+		cursor = getNow()
+	}
+
+	var photos services.Photos
+	all, err := photos.GetPhotosByAlbumId(albumId, cursor)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func PostPhoto(w http.ResponseWriter, r *http.Request) {
+	maxSize := 10 << 20 // 10mb
+	err := helper.ParseMultipartForm(w, r, maxSize)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	projectId := chi.URLParam(r, "projectId")
+	albumId := chi.URLParam(r, "albumId")
+	userId := r.Context().Value(custom.UserID).(string)
+
+	requiredFileFields := "photo"
+	if _, ok := r.MultipartForm.File[requiredFileFields]; !ok {
+		message := fmt.Sprintf("Missing required file: %s", requiredFileFields)
+		helper.HandleError(w, &custom.MalformedRequest{
+			Status:  http.StatusBadRequest,
+			Message: message,
+		})
+		return
+	}
+
+	var photoItem services.Photos
+	id, err := photoItem.PostPhotoByAlbumId(r, projectId, albumId, userId)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully added photo to the album"
+	payload.Data = struct {
+		Id string `json:"id"`
+	}{
+		Id: id,
+	}
+
+	helper.EncodeJSON(w, http.StatusCreated, payload)
+}
+
+func DeletePhotosById(w http.ResponseWriter, r *http.Request) {
+	photoId, err := helper.DecodeJSON[services.PhotoDelete](w, r, mb)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var photo services.Photos
+	err = photo.DeletePhotoById(photoId.Id)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Message = "Successfully deleted photos"
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

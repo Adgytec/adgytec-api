@@ -35,6 +35,10 @@ type PhotosPath struct {
 	Path string `db:"path"`
 }
 
+type PhotoDelete struct {
+	Id []string
+}
+
 func addAlbumToDatabase(a *Album, userId, projectId string, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 

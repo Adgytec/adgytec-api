@@ -1,9 +1,6 @@
 package dbqueries
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/jackc/pgx/v5"
 )
 
@@ -63,20 +60,30 @@ func DeleteNewsByIdArgs(newsId string) pgx.NamedArgs {
 	}
 }
 
-func DeleteNewsByProjectId(projectId string) string {
-	query := fmt.Sprintf("DELETE FROM news WHERE project_id='%v' RETURNING image", projectId)
-	return query
+const DeleteNewsByProjectId = `
+	DELETE FROM news
+	WHERE 
+	project_id = @projectId
+	RETURNING image
+`
+
+func DeleteNewsByProjectIdArgs(projectId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+	}
 }
 
-func DeleteMultipleNewsById(newsId []string) string {
-	for i, val := range newsId {
-		newsId[i] = "'" + val + "'"
+const DeleteMultipleNewsById = `
+	DELETE FROM news
+	WHERE 
+	news_id = ANY(@newsIds)
+	RETURNING image
+`
+
+func DeleteMultipleNewsByIdArgs(newsId []string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"newsIds": newsId,
 	}
-	newsIdString := strings.Join(newsId, ", ")
-
-	query := fmt.Sprintf("DELETE FROM news WHERE news_id IN (%v) RETURNING image", newsIdString)
-
-	return query
 }
 
 // update news

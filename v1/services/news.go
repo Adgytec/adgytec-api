@@ -176,16 +176,22 @@ func (n *News) DeleteNews() error {
 
 func (n *NewsDelete) DeleteNewsMultiple(projectId string) error {
 	deleteAll := len(n.NewsId) == 0
+
+	var args pgx.NamedArgs
 	var query string
 
 	if deleteAll {
+		args = dbqueries.DeleteNewsByProjectIdArgs(projectId)
+		query = dbqueries.DeleteNewsByProjectId
+
 		// query = dbqueries.DeleteNewsByProjectId(projectId)
-		return &custom.MalformedRequest{Status: http.StatusServiceUnavailable, Message: "This method is not available for the time being"}
+		// return &custom.MalformedRequest{Status: http.StatusServiceUnavailable, Message: "This method is not available for the time being"}
 	} else {
-		query = dbqueries.DeleteMultipleNewsById(n.NewsId)
+		query = dbqueries.DeleteMultipleNewsById
+		args = dbqueries.DeleteMultipleNewsByIdArgs(n.NewsId)
 	}
 
-	rows, err := db.Query(ctx, query)
+	rows, err := db.Query(ctx, query, args)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {

@@ -131,6 +131,8 @@ CREATE TABLE "photos" (
     "album_id" uuid NOT NULL,
     "path" varchar NOT NULL,
     "created_at" timestamp DEFAULT(now())
+    "user_id" varchar NOT NULL
 )
 
 ALTER TABLE "photos" ADD FOREIGN KEY ("album_id") REFERENCES "album" ("album_id") on update cascade on delete cascade;
+ALTER TABLE "photos" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;

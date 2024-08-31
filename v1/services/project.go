@@ -101,9 +101,15 @@ func (p *Project) CreateProject(r *http.Request) error {
 	var img image.Image
 	buf := new(bytes.Buffer)
 
-	if contentType == webp {
-		log.Println("webp image")
-		format = "webp"
+	if contentType == webp || contentType == svg || contentType == gif {
+		switch contentType {
+		case webp:
+			format = "webp"
+		case svg:
+			format = "svg"
+		case gif:
+			format = "gif"
+		}
 	} else {
 		img, format, err = image.Decode(file)
 		if err != nil {
@@ -138,7 +144,7 @@ func (p *Project) CreateProject(r *http.Request) error {
 
 	wg.Add(2)
 
-	if contentType == webp {
+	if contentType == webp || contentType == svg || contentType == gif {
 		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
 	} else {
 		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)

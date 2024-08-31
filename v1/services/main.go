@@ -36,6 +36,8 @@ var expires time.Duration = time.Second * 60 * 60 // 1hr
 var week time.Duration = 604800 * time.Second
 
 const webp = "image/webp"
+const gif = "image/gif"
+const svg = "image/svg+xml"
 
 type IndexedValue struct {
 	Index int

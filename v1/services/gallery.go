@@ -82,16 +82,24 @@ func (a *Album) CreateAlbum(r *http.Request, projectId, userId string) error {
 		return err
 	}
 
-	img, format, err := image.Decode(file)
-	if err != nil {
-		log.Printf("Error decoding image: %v\n", err)
-		return err
-	}
-
+	var format string
+	var img image.Image
 	buf := new(bytes.Buffer)
-	err = handleImage(img, buf, format)
-	if err != nil {
-		return err
+
+	if contentType == webp {
+		log.Println("webp image")
+		format = "webp"
+	} else {
+		img, format, err = image.Decode(file)
+		if err != nil {
+			log.Printf("Error decoding image: %v\n", err)
+			return err
+		}
+
+		err = handleImage(img, buf, format)
+		if err != nil {
+			return err
+		}
 	}
 
 	albumId := GenerateUUID().String()
@@ -107,7 +115,11 @@ func (a *Album) CreateAlbum(r *http.Request, projectId, userId string) error {
 	errChan := make(chan error, 2)
 
 	wg.Add(2)
-	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
+	if contentType == webp {
+		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
+	} else {
+		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
+	}
 	go addAlbumToDatabase(a, userId, projectId, wg, errChan)
 
 	wg.Wait()
@@ -243,16 +255,24 @@ func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 		return err
 	}
 
-	img, format, err := image.Decode(file)
-	if err != nil {
-		log.Printf("Error decoding image: %v\n", err)
-		return err
-	}
-
+	var format string
+	var img image.Image
 	buf := new(bytes.Buffer)
-	err = handleImage(img, buf, format)
-	if err != nil {
-		return err
+
+	if contentType == webp {
+		log.Println("webp image")
+		format = "webp"
+	} else {
+		img, format, err = image.Decode(file)
+		if err != nil {
+			log.Printf("Error decoding image: %v\n", err)
+			return err
+		}
+
+		err = handleImage(img, buf, format)
+		if err != nil {
+			return err
+		}
 	}
 
 	objectName := fmt.Sprintf("services/gallery/%v/%v/%v.%v", projectId, a.Id, generateRandomString(), format)
@@ -267,7 +287,11 @@ func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 
 	wg.Add(2)
 
-	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
+	if contentType == webp {
+		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
+	} else {
+		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
+	}
 	go handleAlbumCoverDatabase(objectName, a.Id, wg, errChan)
 
 	wg.Wait()

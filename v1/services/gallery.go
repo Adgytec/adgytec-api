@@ -143,34 +143,34 @@ func (a *Album) CreateAlbum(r *http.Request, projectId, userId string) error {
 }
 
 func deleteImagesFromAlbum(albumId, projectId string) {
-	objectsCh := make(chan minio.ObjectInfo)
-	objectName := fmt.Sprintf("services/gallery/%v/%v/", projectId, albumId)
+	mediaPrefix := fmt.Sprintf("services/gallery/%v/%v/", projectId, albumId)
 	if val := os.Getenv("ENV"); val == "dev" {
-		objectName = "dev/" + objectName
+		mediaPrefix = "dev/" + mediaPrefix
 	}
+	objectsCh := make(chan minio.ObjectInfo)
 
 	go func() {
 		defer close(objectsCh)
-		// List all objects from a bucket-name with a matching prefix.
-		for object := range spaceStorage.ListObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), minio.ListObjectsOptions{
-			Prefix:    objectName,
+
+		opts := minio.ListObjectsOptions{
 			Recursive: true,
-		}) {
+			Prefix:    mediaPrefix,
+		}
+		// List all objects from a bucket-name with a matching prefix.
+		for object := range spaceStorage.ListObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), opts) {
 			if object.Err != nil {
-				log.Fatalln(object.Err)
+				log.Printf("error listing object: %v\n", object.Err)
+			} else {
+				objectsCh <- object
 			}
-			objectsCh <- object
 		}
 	}()
 
-	opts := minio.RemoveObjectsOptions{
-		GovernanceBypass: true,
-	}
+	opts := minio.RemoveObjectsOptions{}
 
 	for rErr := range spaceStorage.RemoveObjects(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectsCh, opts) {
 		fmt.Println("Error detected during deletion: ", rErr)
 	}
-
 }
 
 func (a *Album) DeleteAlbumById(projectId string) error {

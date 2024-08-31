@@ -481,7 +481,6 @@ func deleteBlogMedia(projectId, blogId string) {
 		mediaPrefix = "dev/" + mediaPrefix
 	}
 	objectsCh := make(chan minio.ObjectInfo)
-	log.Println(mediaPrefix)
 
 	go func() {
 		defer close(objectsCh)

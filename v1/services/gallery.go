@@ -107,7 +107,7 @@ func (a *Album) CreateAlbum(r *http.Request, projectId, userId string) error {
 	errChan := make(chan error, 2)
 
 	wg.Add(2)
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
 	go addAlbumToDatabase(a, userId, projectId, wg, errChan)
 
 	wg.Wait()
@@ -267,7 +267,7 @@ func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 
 	wg.Add(2)
 
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
 	go handleAlbumCoverDatabase(objectName, a.Id, wg, errChan)
 
 	wg.Wait()
@@ -353,6 +353,8 @@ func addPhotoToDatabase(p *Photos, userId, albumId string, wg *sync.WaitGroup, e
 }
 
 func (p *Photos) PostPhotoByAlbumId(r *http.Request, projectId, albumId, userId string) (string, error) {
+	photoId := GenerateUUID().String()
+
 	file, header, err := r.FormFile("photo")
 	if err != nil {
 		log.Printf("Error retriving file: %v\n ", err)
@@ -365,19 +367,26 @@ func (p *Photos) PostPhotoByAlbumId(r *http.Request, projectId, albumId, userId 
 		return "", err
 	}
 
-	img, format, err := image.Decode(file)
-	if err != nil {
-		log.Printf("Error decoding image: %v\n", err)
-		return "", err
-	}
-
+	var format string
+	var img image.Image
 	buf := new(bytes.Buffer)
-	err = handleImage(img, buf, format)
-	if err != nil {
-		return "", err
+
+	if contentType == webp {
+		log.Println("webp image")
+		format = "webp"
+	} else {
+		img, format, err = image.Decode(file)
+		if err != nil {
+			log.Printf("Error decoding image: %v\n", err)
+			return "", err
+		}
+
+		err = handleImage(img, buf, format)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	photoId := GenerateUUID().String()
 	objectName := fmt.Sprintf("services/gallery/%v/%v/photos/%v.%v", projectId, albumId, photoId, format)
 
 	if val := os.Getenv("ENV"); val == "dev" {
@@ -390,7 +399,11 @@ func (p *Photos) PostPhotoByAlbumId(r *http.Request, projectId, albumId, userId 
 	errChan := make(chan error, 2)
 
 	wg.Add(2)
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	if contentType == webp {
+		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
+	} else {
+		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
+	}
 	go addPhotoToDatabase(p, userId, albumId, wg, errChan)
 
 	wg.Wait()

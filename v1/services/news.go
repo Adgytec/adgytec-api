@@ -91,7 +91,7 @@ func (n *News) CreateNewsItem(r *http.Request, projectId string) error {
 
 	wg.Add(2)
 
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
 	go addNewsToDatabase(n, projectId, wg, errChan)
 
 	wg.Wait()

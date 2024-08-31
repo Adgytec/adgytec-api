@@ -126,17 +126,17 @@ func (p *Project) CreateProject(r *http.Request) error {
 	p.Id = projectId
 
 	wg := new(sync.WaitGroup)
-	errchan := make(chan error, 2)
+	errChan := make(chan error, 2)
 
 	wg.Add(2)
 
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errchan)
-	go addProjectToDatabase(p, clientToken, wg, errchan)
+	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
+	go addProjectToDatabase(p, clientToken, wg, errChan)
 
 	wg.Wait()
-	close(errchan)
+	close(errChan)
 
-	for err := range errchan {
+	for err := range errChan {
 		if err != nil {
 			go deleteFromCloudStorage(objectName)
 			go p.DeleteProjectById()

@@ -221,7 +221,7 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 
 	wg.Add(2)
 
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
 	go addBlogToDatabase(b, projectId, userId, wg, errChan)
 
 	wg.Wait()
@@ -536,7 +536,7 @@ func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
 
 	wg.Add(2)
 
-	go uploadImageToCloudStorage(objectName, buf, contentType, wg, errChan)
+	go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
 	go handleBlogCoverDatabase(objectName, b.Id, wg, errChan)
 
 	wg.Wait()

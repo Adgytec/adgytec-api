@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"log"
 	mathRand "math/rand/v2"
 	"mime/multipart"
@@ -22,8 +23,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
-	"github.com/nfnt/resize"
 	"github.com/rohan031/adgytec-api/v1/custom"
+	// "golang.org/x/image/webp"
 )
 
 var db *pgxpool.Pool
@@ -33,6 +34,8 @@ var firebaseClient *auth.Client
 
 var expires time.Duration = time.Second * 60 * 60 // 1hr
 var week time.Duration = 604800 * time.Second
+
+const webp = "image/webp"
 
 type IndexedValue struct {
 	Index int
@@ -78,18 +81,19 @@ func isImageFile(header *multipart.FileHeader) (string, error) {
 }
 
 func handleImage(img image.Image, buf *bytes.Buffer, format string) error {
+
 	switch strings.ToLower(format) {
 	case "jpeg", "jpg":
-		resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
-		err := jpeg.Encode(buf, resizedImg, &jpeg.Options{Quality: 80})
+		// resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
+		err := jpeg.Encode(buf, img, &jpeg.Options{Quality: 80})
 		if err != nil {
 			log.Printf("failed to encode JPEG image: %v", err)
 			return err
 		}
 	case "png":
-		resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
+		// resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
 		encoder := png.Encoder{CompressionLevel: png.BestCompression}
-		err := encoder.Encode(buf, resizedImg)
+		err := encoder.Encode(buf, img)
 		if err != nil {
 			log.Printf("failed to encode PNG image: %v", err)
 			return err
@@ -106,10 +110,10 @@ func handleImage(img image.Image, buf *bytes.Buffer, format string) error {
 
 }
 
-func uploadImageToCloudStorage(objectName string, buf *bytes.Buffer, contentType string, wg *sync.WaitGroup, errChan chan error) {
+func uploadImageToCloudStorage(objectName string, buf io.Reader, size int64, contentType string, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 
-	_, err := spaceStorage.PutObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, buf, int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
+	_, err := spaceStorage.PutObject(ctx, os.Getenv("SPACE_STORAGE_BUCKET_NAME"), objectName, buf, size, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		log.Printf("failed to upload image: %v", err)
 	}

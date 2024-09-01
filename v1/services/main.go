@@ -20,10 +20,12 @@ import (
 	"time"
 
 	"firebase.google.com/go/v4/auth"
+	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minio/minio-go/v7"
 	"github.com/rohan031/adgytec-api/v1/custom"
+	"github.com/rwcarlsen/goexif/exif"
 	// "golang.org/x/image/webp"
 )
 
@@ -82,11 +84,49 @@ func isImageFile(header *multipart.FileHeader) (string, error) {
 	return contentType, nil
 }
 
-func handleImage(img image.Image, buf *bytes.Buffer, format string) error {
+func reverseOrientation(img image.Image, o string) *image.NRGBA {
+	switch o {
+	case "1":
+		return imaging.Clone(img)
+	case "2":
+		return imaging.FlipV(img)
+	case "3":
+		return imaging.Rotate180(img)
+	case "4":
+		return imaging.Rotate180(imaging.FlipV(img))
+	case "5":
+		return imaging.Rotate270(imaging.FlipV(img))
+	case "6":
+		return imaging.Rotate270(img)
+	case "7":
+		return imaging.Rotate90(imaging.FlipV(img))
+	case "8":
+		return imaging.Rotate90(img)
+	}
+	log.Printf("unknown orientation %s, expect 1-8", o)
+	return imaging.Clone(img)
+}
+
+func handleImage(img image.Image, buf *bytes.Buffer, format string, file multipart.File) error {
+	_, err := file.Seek(0, io.SeekStart)
+	if err != nil {
+		log.Printf("failed to seek file: %v\n", err)
+	}
+
 	switch strings.ToLower(format) {
 	case "jpeg", "jpg":
 		// resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
-		err := jpeg.Encode(buf, img, &jpeg.Options{Quality: 80})
+		x, err := exif.Decode(file)
+		if err != nil {
+			log.Printf("failed reading exif data in %s\n", err.Error())
+		}
+		if x != nil {
+			orient, _ := x.Get(exif.Orientation)
+			if orient != nil {
+				img = reverseOrientation(img, orient.String())
+			}
+		}
+		err = jpeg.Encode(buf, img, &jpeg.Options{Quality: 80})
 		if err != nil {
 			log.Printf("failed to encode JPEG image: %v", err)
 			return err
@@ -191,7 +231,7 @@ func handleRequestImage(file multipart.File, header *multipart.FileHeader) (io.R
 		return nil, "", "", 0, err
 	}
 
-	err = handleImage(img, buf, format)
+	err = handleImage(img, buf, format, file)
 	if err != nil {
 		return nil, "", "", 0, err
 	}

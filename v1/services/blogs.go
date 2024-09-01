@@ -77,12 +77,6 @@ func (bm *BlogMedia) UploadMedia(r *http.Request) (error, bool) {
 			}
 			defer file.Close()
 
-			// contentType := header.Header.Get("Content-type")
-			// if !strings.HasPrefix(contentType, "image/") {
-			// 	isSuccess = false
-			// 	return
-			// }
-
 			contentType, err := isImageFile(header)
 			if err != nil {
 				isSuccess = false
@@ -116,20 +110,6 @@ func (bm *BlogMedia) UploadMedia(r *http.Request) (error, bool) {
 					return
 				}
 			}
-
-			// img, format, err := image.Decode(file)
-			// if err != nil {
-			// 	log.Printf("Error decoding image: %v\n", err)
-			// 	isSuccess = false
-			// 	return
-			// }
-
-			// buf := new(bytes.Buffer)
-			// err = handleImage(img, buf, format)
-			// if err != nil {
-			// 	isSuccess = false
-			// 	return
-			// }
 
 			if contentType == webp || contentType == svg || contentType == gif {
 				_, err = spaceStorage.PutObject(ctx,

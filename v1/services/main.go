@@ -83,7 +83,6 @@ func isImageFile(header *multipart.FileHeader) (string, error) {
 }
 
 func handleImage(img image.Image, buf *bytes.Buffer, format string) error {
-
 	switch strings.ToLower(format) {
 	case "jpeg", "jpg":
 		// resizedImg := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
@@ -159,4 +158,43 @@ func deleteFromCloudStorage(objectName string) error {
 	}
 
 	return nil
+}
+
+// return type
+// file to upload, file format, file content type, size of file, error if any
+func handleRequestImage(file multipart.File, header *multipart.FileHeader) (io.Reader, string, string, int64, error) {
+	contentType, err := isImageFile(header)
+	if err != nil {
+		return nil, "", "", 0, err
+	}
+
+	var format string
+	var img image.Image
+	buf := new(bytes.Buffer)
+
+	if contentType == webp || contentType == svg || contentType == gif {
+		switch contentType {
+		case webp:
+			format = "webp"
+		case svg:
+			format = "svg"
+		case gif:
+			format = "gif"
+		}
+
+		return file, format, contentType, header.Size, nil
+	}
+
+	img, format, err = image.Decode(file)
+	if err != nil {
+		log.Printf("Error decoding image: %v\n", err)
+		return nil, "", "", 0, err
+	}
+
+	err = handleImage(img, buf, format)
+	if err != nil {
+		return nil, "", "", 0, err
+	}
+
+	return buf, format, contentType, int64(buf.Len()), nil
 }

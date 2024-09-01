@@ -1,11 +1,9 @@
 package services
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
 	"log"
 	"net/http"
 	"os"
@@ -92,35 +90,9 @@ func (p *Project) CreateProject(r *http.Request) error {
 	}
 	defer file.Close()
 
-	contentType, err := isImageFile(header)
+	fileToUpload, format, contentType, size, err := handleRequestImage(file, header)
 	if err != nil {
 		return err
-	}
-
-	var format string
-	var img image.Image
-	buf := new(bytes.Buffer)
-
-	if contentType == webp || contentType == svg || contentType == gif {
-		switch contentType {
-		case webp:
-			format = "webp"
-		case svg:
-			format = "svg"
-		case gif:
-			format = "gif"
-		}
-	} else {
-		img, format, err = image.Decode(file)
-		if err != nil {
-			log.Printf("Error decoding image: %v\n", err)
-			return err
-		}
-
-		err = handleImage(img, buf, format)
-		if err != nil {
-			return err
-		}
 	}
 
 	projectId := GenerateUUID().String()
@@ -144,11 +116,7 @@ func (p *Project) CreateProject(r *http.Request) error {
 
 	wg.Add(2)
 
-	if contentType == webp || contentType == svg || contentType == gif {
-		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
-	} else {
-		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
-	}
+	go uploadImageToCloudStorage(objectName, fileToUpload, size, contentType, wg, errChan)
 	go addProjectToDatabase(p, clientToken, wg, errChan)
 
 	wg.Wait()

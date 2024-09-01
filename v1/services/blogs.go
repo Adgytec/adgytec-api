@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
 	"log"
 	"net/http"
 	"os"
@@ -77,71 +76,25 @@ func (bm *BlogMedia) UploadMedia(r *http.Request) (error, bool) {
 			}
 			defer file.Close()
 
-			contentType, err := isImageFile(header)
+			fileToUpload, _, contentType, size, err := handleRequestImage(file, header)
 			if err != nil {
 				isSuccess = false
 				return
 			}
 
-			var format string
-			var img image.Image
-			buf := new(bytes.Buffer)
-
-			if contentType == webp || contentType == svg || contentType == gif {
-				switch contentType {
-				case webp:
-					format = "webp"
-				case svg:
-					format = "svg"
-				case gif:
-					format = "gif"
-				}
-			} else {
-				img, format, err = image.Decode(file)
-				if err != nil {
-					log.Printf("Error decoding image: %v\n", err)
-					isSuccess = false
-					return
-				}
-
-				err = handleImage(img, buf, format)
-				if err != nil {
-					isSuccess = false
-					return
-				}
+			_, err = spaceStorage.PutObject(
+				ctx,
+				os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
+				metadata.Path,
+				fileToUpload,
+				size,
+				minio.PutObjectOptions{
+					ContentType: contentType,
+				})
+			if err != nil {
+				isSuccess = false
+				return
 			}
-
-			if contentType == webp || contentType == svg || contentType == gif {
-				_, err = spaceStorage.PutObject(ctx,
-					os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
-					metadata.Path,
-					file,
-					header.Size, minio.PutObjectOptions{ContentType: contentType})
-				if err != nil {
-					isSuccess = false
-					return
-				}
-			} else {
-				_, err = spaceStorage.PutObject(ctx,
-					os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
-					metadata.Path,
-					buf,
-					int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
-				if err != nil {
-					isSuccess = false
-					return
-				}
-			}
-
-			// _, err = spaceStorage.PutObject(ctx,
-			// 	os.Getenv("SPACE_STORAGE_BUCKET_NAME"),
-			// 	metadata.Path,
-			// 	buf,
-			// 	int64(buf.Len()), minio.PutObjectOptions{ContentType: contentType})
-			// if err != nil {
-			// 	isSuccess = false
-			// 	return
-			// }
 
 		}(i, meta)
 	}
@@ -214,43 +167,9 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 	}
 	defer file.Close()
 
-	// contentType := header.Header.Get("Content-type")
-	// if !strings.HasPrefix(contentType, "image/") {
-	// 	return (&custom.MalformedRequest{
-	// 		Status:  http.StatusUnsupportedMediaType,
-	// 		Message: http.StatusText(http.StatusUnsupportedMediaType),
-	// 	})
-	// }
-
-	contentType, err := isImageFile(header)
+	fileToUpload, format, contentType, size, err := handleRequestImage(file, header)
 	if err != nil {
 		return err
-	}
-
-	var format string
-	var img image.Image
-	buf := new(bytes.Buffer)
-
-	if contentType == webp || contentType == svg || contentType == gif {
-		switch contentType {
-		case webp:
-			format = "webp"
-		case svg:
-			format = "svg"
-		case gif:
-			format = "gif"
-		}
-	} else {
-		img, format, err = image.Decode(file)
-		if err != nil {
-			log.Printf("Error decoding image: %v\n", err)
-			return err
-		}
-
-		err = handleImage(img, buf, format)
-		if err != nil {
-			return err
-		}
 	}
 
 	objectName := fmt.Sprintf("services/blogs/%v/%v/%v.%v", projectId, b.Id, generateRandomString(), format)
@@ -265,11 +184,7 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 
 	wg.Add(2)
 
-	if contentType == webp || contentType == svg || contentType == gif {
-		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
-	} else {
-		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
-	}
+	go uploadImageToCloudStorage(objectName, fileToUpload, size, contentType, wg, errChan)
 	go addBlogToDatabase(b, projectId, userId, wg, errChan)
 
 	wg.Wait()
@@ -546,43 +461,9 @@ func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
 
 	defer file.Close()
 
-	// contentType := header.Header.Get("Content-type")
-	// if !strings.HasPrefix(contentType, "image/") {
-	// 	return (&custom.MalformedRequest{
-	// 		Status:  http.StatusUnsupportedMediaType,
-	// 		Message: http.StatusText(http.StatusUnsupportedMediaType),
-	// 	})
-	// }
-
-	contentType, err := isImageFile(header)
+	fileToUpload, format, contentType, size, err := handleRequestImage(file, header)
 	if err != nil {
 		return err
-	}
-
-	var format string
-	var img image.Image
-	buf := new(bytes.Buffer)
-
-	if contentType == webp || contentType == svg || contentType == gif {
-		switch contentType {
-		case webp:
-			format = "webp"
-		case svg:
-			format = "svg"
-		case gif:
-			format = "gif"
-		}
-	} else {
-		img, format, err = image.Decode(file)
-		if err != nil {
-			log.Printf("Error decoding image: %v\n", err)
-			return err
-		}
-
-		err = handleImage(img, buf, format)
-		if err != nil {
-			return err
-		}
 	}
 
 	objectName := fmt.Sprintf("services/blogs/%v/%v/%v.%v", projectId, b.Id, generateRandomString(), format)
@@ -597,11 +478,7 @@ func (b *Blog) PatchBlogCover(r *http.Request, projectId string) error {
 
 	wg.Add(2)
 
-	if contentType == webp || contentType == svg || contentType == gif {
-		go uploadImageToCloudStorage(objectName, file, header.Size, contentType, wg, errChan)
-	} else {
-		go uploadImageToCloudStorage(objectName, buf, int64(buf.Len()), contentType, wg, errChan)
-	}
+	go uploadImageToCloudStorage(objectName, fileToUpload, size, contentType, wg, errChan)
 	go handleBlogCoverDatabase(objectName, b.Id, wg, errChan)
 
 	wg.Wait()

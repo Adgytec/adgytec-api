@@ -191,7 +191,7 @@ func updateUserFirebase(userId, name, role string, wg *sync.WaitGroup, errchan c
 	params := (&auth.UserToUpdate{}).DisplayName(name)
 	_, err := firebaseClient.UpdateUser(ctx, userId, params)
 	if err != nil {
-		log.Fatalf("Error updating user: %v\n", err)
+		log.Printf("Error updating user: %v\n", err)
 		errchan <- err
 		return
 	}
@@ -244,7 +244,7 @@ func updateUserNameFirebase(userId, name string, wg *sync.WaitGroup, errchan cha
 	params := (&auth.UserToUpdate{}).DisplayName(name)
 	_, err := firebaseClient.UpdateUser(ctx, userId, params)
 	if err != nil {
-		log.Fatalf("Error updating user: %v\n", err)
+		log.Printf("Error updating user: %v\n", err)
 
 	}
 	errchan <- err

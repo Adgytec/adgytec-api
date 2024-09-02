@@ -120,7 +120,7 @@ func handleImage(img image.Image, buf *bytes.Buffer, format string, file multipa
 		if err != nil {
 			log.Printf("failed reading exif data in %s\n", err.Error())
 		}
-		if x != nil {
+		if x != nil && err == nil {
 			orient, _ := x.Get(exif.Orientation)
 			if orient != nil {
 				img = reverseOrientation(img, orient.String())

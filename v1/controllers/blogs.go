@@ -85,7 +85,7 @@ func DeleteMedia(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostBlog(w http.ResponseWriter, r *http.Request) {
-	maxSize := 20 << 20 // 20mb
+	maxSize := 30 << 20 // 20mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)
@@ -261,7 +261,7 @@ func DeleteBlogById(w http.ResponseWriter, r *http.Request) {
 }
 
 func PatchBlogCover(w http.ResponseWriter, r *http.Request) {
-	maxSize := 10 << 20 // 10mb
+	maxSize := 30 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)

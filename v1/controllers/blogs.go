@@ -29,7 +29,7 @@ func GetUUID(w http.ResponseWriter, r *http.Request) {
 func PostMedia(w http.ResponseWriter, r *http.Request) {
 	// projectId := chi.URLParam(r, "projectId")
 	// blogId := chi.URLParam(r, "blogId")
-	maxSize := 150 << 20 // 150 mb
+	maxSize := 25 << 20 // 150 mb
 
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
@@ -85,7 +85,7 @@ func DeleteMedia(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostBlog(w http.ResponseWriter, r *http.Request) {
-	maxSize := 30 << 20 // 20mb
+	maxSize := 15 << 20 // 20mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)
@@ -261,7 +261,7 @@ func DeleteBlogById(w http.ResponseWriter, r *http.Request) {
 }
 
 func PatchBlogCover(w http.ResponseWriter, r *http.Request) {
-	maxSize := 30 << 20 // 10mb
+	maxSize := 10 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)

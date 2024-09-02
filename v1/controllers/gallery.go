@@ -55,7 +55,7 @@ func GetAlbumsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostAlbum(w http.ResponseWriter, r *http.Request) {
-	maxSize := 30 << 20 // 10mb
+	maxSize := 10 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)
@@ -129,7 +129,7 @@ func PatchAlbumMetadataById(w http.ResponseWriter, r *http.Request) {
 }
 
 func PatchAlbumCoverById(w http.ResponseWriter, r *http.Request) {
-	maxSize := 30 << 20 // 10mb
+	maxSize := 10 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)
@@ -210,7 +210,7 @@ func GetPhotosByAlbumId(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostPhoto(w http.ResponseWriter, r *http.Request) {
-	maxSize := 30 << 20 // 25mb
+	maxSize := 10 << 20 // 25mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)

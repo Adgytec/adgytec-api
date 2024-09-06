@@ -210,7 +210,7 @@ func GetPhotosByAlbumId(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostPhoto(w http.ResponseWriter, r *http.Request) {
-	maxSize := 10 << 20 // 25mb
+	maxSize := 10 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)
 	if err != nil {
 		helper.HandleError(w, err)

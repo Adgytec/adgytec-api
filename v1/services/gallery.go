@@ -168,7 +168,7 @@ func (a *Album) PatchAlbumMetadataById() error {
 			}
 		}
 
-		log.Printf("Error updating blog data: %v\n", err)
+		log.Printf("Error updating album data: %v\n", err)
 		return err
 	}
 	return nil

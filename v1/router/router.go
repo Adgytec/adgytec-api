@@ -31,7 +31,7 @@ func Router() *chi.Mux {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	router.Get("/newsletter", controllers.GetNewslettersEmail)  // protected route called from dashboard to showl all the emails that are signup for newsletter along with their status subscribe and unsbuscribe
+	router.Get("/newsletter", controllers.GetNewslettersEmail)  // protected route called from dashboard to show all the emails that are signup for newsletter along with their status subscribe and unsubscribe
 	router.Post("/newsletter", controllers.PostNewsletterEmail) // public route called from client frontend with their client token to add the email, if email already exists set status to subscribe
 	// patch method for unsubscribing from email newsletter
 
@@ -102,7 +102,7 @@ func Router() *chi.Mux {
 		r.Get("/uuid", controllers.GetUUID)
 	})
 
-	//dashboard endpoins for services
+	//dashboard endpoints for services
 	router.Group(func(r chi.Router) {
 		r.Use(middleware.TokenAuthentication)
 		r.Use(middleware.ServicesRoleAuthorization)
@@ -136,7 +136,7 @@ func Router() *chi.Mux {
 		r.Delete("/services/gallery/{projectId}/album/{albumId}", controllers.DeletePhotosById)
 	})
 
-	// general public route
+	// public route
 	router.Group(func(r chi.Router) {
 		// middleware
 

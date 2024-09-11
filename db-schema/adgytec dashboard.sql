@@ -1,3 +1,5 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
 CREATE TABLE "users" (
   "user_id" varchar PRIMARY KEY,
   "name" varchar NOT NULL,
@@ -50,7 +52,7 @@ ALTER TABLE "user_to_project" ADD PRIMARY KEY ("user_id", "project_id");
 ALTER TABLE "project_to_service" ADD PRIMARY KEY ("service_id", "project_id");
 
 
-/* 
+/*
     service schema
 */
 
@@ -99,7 +101,7 @@ ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("pro
 ALTER TABLE "category" ADD FOREIGN KEY ("parent_id") REFERENCES "category" ("category_id") on delete cascade on update cascade;
 
 
-/* 
+/*
     custom function and aggregate
 */
 CREATE OR REPLACE FUNCTION jsonb_set(x jsonb, y jsonb, p text[], e jsonb, b boolean)
@@ -130,9 +132,36 @@ CREATE TABLE "photos" (
     "photo_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
     "album_id" uuid NOT NULL,
     "path" varchar NOT NULL,
-    "created_at" timestamp DEFAULT(now())
+    "created_at" timestamp DEFAULT(now()),
     "user_id" varchar NOT NULL
 )
 
 ALTER TABLE "photos" ADD FOREIGN KEY ("album_id") REFERENCES "album" ("album_id") on update cascade on delete cascade;
 ALTER TABLE "photos" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+
+/* documents */
+
+/* cover */
+CREATE TABLE "document_cover" (
+    "cover_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+    "project_id" uuid NOT NULL,
+    "user_id" varchar NOT NULL,
+    "name" varchar NOT NULL,
+    "created_at" timestamp DEFAULT(now())
+)
+
+ALTER TABLE "document_cover" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
+ALTER TABLE "document_cover" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+
+/* document files */
+CREATE TABLE "documents" (
+     "document_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+     "cover_id" uuid NOT NULL,
+     "path" varchar NOT NULL,
+     "created_at" timestamp DEFAULT(now()),
+     "user_id" varchar NOT NULL,
+     "name" varchar NOT NULL
+)
+
+ALTER TABLE "documents" ADD FOREIGN KEY ("cover_id") REFERENCES "document_cover" ("cover_id") on update cascade on delete cascade;
+ALTER TABLE "documents" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;

@@ -92,7 +92,10 @@ func Router() *chi.Mux {
 
 		// gallery
 		r.Get("/services/gallery/albums", controllers.GetAlbumsByProjectIdClient)
-		// r.Get("/services/gallery/album/{albumId}")
+		r.Get("/services/gallery/album/{albumId}", controllers.GetPhotosByAlbumId)
+
+		// documents
+		r.Get("/services/documents/cover", controllers.GetDocumentCoverByProjectIdClient)
 	})
 
 	// getting uuid
@@ -134,6 +137,12 @@ func Router() *chi.Mux {
 		r.Post("/services/gallery/{projectId}/album/{albumId}", controllers.PostPhoto)
 		r.Get("/services/gallery/{projectId}/album/{albumId}", controllers.GetPhotosByAlbumId)
 		r.Delete("/services/gallery/{projectId}/album/{albumId}", controllers.DeletePhotosById)
+
+		// documents
+		r.Get("/services/documents/{projectId}/cover", controllers.GetDocumentCoverByProjectId)
+		r.Post("/services/documents/{projectId}/cover", controllers.PostDocumentCover)
+		r.Patch("/services/documents/{projectId}/cover/{coverId}", controllers.PatchDocumentCoverById)
+		r.Delete("/services/documents/{projectId}/cover/{coverId}", controllers.DeleteDocumentCoverById)
 	})
 
 	// public route

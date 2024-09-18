@@ -75,10 +75,10 @@ func generateRandomString() string {
 func isImageFile(header *multipart.FileHeader) (string, error) {
 	contentType := header.Header.Get("Content-type")
 	if !strings.HasPrefix(contentType, "image/") {
-		return "", (&custom.MalformedRequest{
+		return "", &custom.MalformedRequest{
 			Status:  http.StatusUnsupportedMediaType,
 			Message: http.StatusText(http.StatusUnsupportedMediaType),
-		})
+		}
 	}
 
 	return contentType, nil
@@ -142,9 +142,9 @@ func handleImage(img image.Image, buf *bytes.Buffer, format string, file multipa
 	default:
 		log.Printf("unsupported image format: %s", format)
 		message := "unsupported image format"
-		return (&custom.MalformedRequest{
+		return &custom.MalformedRequest{
 			Status: http.StatusUnsupportedMediaType, Message: message,
-		})
+		}
 	}
 
 	return nil

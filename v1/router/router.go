@@ -16,7 +16,7 @@ func Router() *chi.Mux {
 	allowedOrigins := []string{
 		"https://*.adgytec.in",
 		"https://ecrimino.com",
-		"https://jdkshipping.com",
+		"https://rural-development-eadbe.ondigitalocean.app",
 	}
 	if os.Getenv("ENV") == "dev" {
 		allowedOrigins = append(allowedOrigins, "http://*")
@@ -143,13 +143,6 @@ func Router() *chi.Mux {
 		r.Post("/services/documents/{projectId}/cover", controllers.PostDocumentCover)
 		r.Patch("/services/documents/{projectId}/cover/{coverId}", controllers.PatchDocumentCoverById)
 		r.Delete("/services/documents/{projectId}/cover/{coverId}", controllers.DeleteDocumentCoverById)
-	})
-
-	// public route
-	router.Group(func(r chi.Router) {
-		// middleware
-
-		r.Post("/jdk/contact-us", controllers.PostContactUsJDK)
 	})
 
 	return router

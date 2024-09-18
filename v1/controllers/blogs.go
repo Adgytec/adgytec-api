@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -177,7 +176,6 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 	cursor := r.URL.Query().Get("cursor")
 
-	log.Printf("cursor value: %v\n", cursor)
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}

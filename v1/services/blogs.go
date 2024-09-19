@@ -224,7 +224,7 @@ func (b *Blog) GetBlogsByProjectId(projectId, createdAt string) (*[]BlogSummary,
 		if len(img) > 0 {
 			wg.Add(1)
 
-			go generatePresignedUrl(img, ind, expires, wg, urlChan)
+			go generatePresignedUrl(img, ind, week, wg, urlChan)
 		}
 	}
 
@@ -264,7 +264,7 @@ func (b *Blog) GetBlogsByCategoryId(projectId, categoryId, createdAt string) (*[
 		if len(img) > 0 {
 			wg.Add(1)
 
-			go generatePresignedUrl(img, ind, expires, wg, urlChan)
+			go generatePresignedUrl(img, ind, week, wg, urlChan)
 		}
 	}
 

@@ -172,6 +172,30 @@ func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func GetAllBlogsByCategoryId(w http.ResponseWriter, r *http.Request) {
+	projectId := chi.URLParam(r, "projectId")
+	categoryId := chi.URLParam(r, "categoryId")
+	cursor := r.URL.Query().Get("cursor")
+
+	if len(cursor) == 0 {
+		cursor = getNow()
+	}
+
+	var blogs services.Blog
+	all, err := blogs.GetBlogsByCategoryId(projectId, categoryId, cursor)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+
+}
+
 func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 	cursor := r.URL.Query().Get("cursor")
@@ -182,6 +206,29 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 
 	var blogs services.Blog
 	all, err := blogs.GetBlogsByProjectId(projectId, cursor)
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = all
+
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
+func GetAllBlogsByCategoryIdClient(w http.ResponseWriter, r *http.Request) {
+	projectId := r.Context().Value(custom.ProjectId).(string)
+	categoryId := chi.URLParam(r, "categoryId")
+	cursor := r.URL.Query().Get("cursor")
+
+	if len(cursor) == 0 {
+		cursor = getNow()
+	}
+
+	var blogs services.Blog
+	all, err := blogs.GetBlogsByCategoryId(projectId, categoryId, cursor)
 	if err != nil {
 		helper.HandleError(w, err)
 		return

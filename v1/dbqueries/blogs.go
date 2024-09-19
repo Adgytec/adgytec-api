@@ -32,7 +32,7 @@ func CreateBlogItemArgs(
 }
 
 const GetBlogsByProjectId = `
-	SELECT b.blog_id, b.title, b.cover_image, b.short_text, b.created_at, b.author, json_build_object('id', c.category_id, 'name', c.category_name) as category
+	SELECT b.blog_id, b.title, b.cover_image, b.short_text, b.created_at, b.author, json_build_object('id', c.category_id, 'name', c.category_name) AS category
 	FROM blogs b
 	LEFT JOIN category c
 	ON c.category_id = b.category_id
@@ -46,6 +46,34 @@ func GetBlogsByProjectIdArgs(projectId, createdAt string) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 		"createdAt": createdAt,
+	}
+}
+
+const GetBlogsByCategoryId = `
+	WITH RECURSIVE tree AS (
+		SELECT category_id, parent_id
+		FROM category
+		WHERE category_id = @categoryId
+		UNION ALL
+		SELECT c.category_id, c.parent_id
+		FROM category c, tree t WHERE t.category_id = c.parent_id
+	) 
+	SELECT b.blog_id, b.title, b.cover_image, b.short_text, b.created_at, b.author, json_build_object('id', c.category_id, 'name', c.category_name) AS category
+	FROM blogs b
+	LEFT JOIN category c
+	ON c.category_id = b.category_id
+	WHERE b.project_id = @projectId
+	AND b.category_id IN (SELECT category_id FROM tree)
+	AND b.created_at < @createdAt
+	ORDER BY b.created_at DESC
+	LIMIT 20
+`
+
+func GetBlogsByCategoryIdArgs(projectId, categoryId, createdAt string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId":  projectId,
+		"categoryId": categoryId,
+		"createdAt":  createdAt,
 	}
 }
 

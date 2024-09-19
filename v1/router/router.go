@@ -88,6 +88,7 @@ func Router() *chi.Mux {
 
 		// blogs
 		r.Get("/services/blogs", controllers.GetAllBlogsByProjectIdClient)
+		r.Get("/services/blogs/category/{categoryId}", controllers.GetAllBlogsByCategoryIdClient)
 		r.Get("/services/blog/{blogId}", controllers.GetBlogById)
 
 		// gallery
@@ -122,6 +123,7 @@ func Router() *chi.Mux {
 		r.Delete("/services/blogs/{projectId}/{blogId}/media", controllers.DeleteMedia)
 		r.Post("/services/blogs/{projectId}/{blogId}", controllers.PostBlog)
 		r.Get("/services/blogs/{projectId}", controllers.GetAllBlogsByProjectId)
+		r.Get("/services/blogs/{projectId}/category/{categoryId}", controllers.GetAllBlogsByCategoryId)
 		r.Get("/services/blogs/{projectId}/{blogId}", controllers.GetBlogById)
 		r.Patch("/services/blogs/{projectId}/{blogId}", controllers.PatchBlogMetadataById)
 		r.Delete("/services/blogs/{projectId}/{blogId}", controllers.DeleteBlogById)

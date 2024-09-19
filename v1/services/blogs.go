@@ -239,6 +239,46 @@ func (b *Blog) GetBlogsByProjectId(projectId, createdAt string) (*[]BlogSummary,
 	return &blogs, nil
 }
 
+func (b *Blog) GetBlogsByCategoryId(projectId, categoryId, createdAt string) (*[]BlogSummary, error) {
+	args := dbqueries.GetBlogsByCategoryIdArgs(projectId, categoryId, createdAt)
+	rows, err := db.Query(ctx, dbqueries.GetBlogsByCategoryId, args)
+
+	if err != nil {
+		log.Printf("Error fetching blogs from db: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	blogs, err := pgx.CollectRows(rows, pgx.RowToStructByName[BlogSummary])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		return nil, err
+	}
+
+	wg := new(sync.WaitGroup)
+	urlChan := make(chan IndexedValue, len(blogs))
+
+	for ind, item := range blogs {
+		img := item.Cover
+
+		if len(img) > 0 {
+			wg.Add(1)
+
+			go generatePresignedUrl(img, ind, expires, wg, urlChan)
+		}
+	}
+
+	wg.Wait()
+	close(urlChan)
+
+	for url := range urlChan {
+		ind := url.Index
+		blogs[ind].Cover = url.Url
+	}
+
+	return &blogs, nil
+}
+
 func (b *Blog) GetBlogById() (*Blog, error) {
 	args := dbqueries.GetBlogsByIdArgs(b.Id)
 	rows, err := db.Query(ctx, dbqueries.GetBlogById, args)

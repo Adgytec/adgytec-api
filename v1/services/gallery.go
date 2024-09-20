@@ -279,7 +279,7 @@ func (a *Album) GetAlbumsByProjectId(projectId, cursor string) (*[]Album, error)
 		wg.Add(1)
 
 		img := item.Cover
-		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+		go generatePresignedUrl(img, ind, week, wg, urlChan)
 	}
 
 	wg.Wait()
@@ -442,7 +442,7 @@ func (p *Photos) GetPhotosByAlbumId(albumId, cursor string) (*[]Photos, error) {
 		wg.Add(1)
 
 		img := item.Path
-		go generatePresignedUrl(img, ind, expires, wg, urlChan)
+		go generatePresignedUrl(img, ind, week, wg, urlChan)
 	}
 
 	wg.Wait()

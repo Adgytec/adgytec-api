@@ -293,6 +293,38 @@ func (a *Album) GetAlbumsByProjectId(projectId, cursor string) (*[]Album, error)
 	return &albums, nil
 }
 
+func (a *Album) GetAlbumNameById() (string, error) {
+	args := dbqueries.GetAlbumNameByIdArgs(a.Id)
+	rows, err := db.Query(ctx, dbqueries.GetAlbumNameById, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "22P02" {
+				message := "Invalid album id."
+				return "", &custom.MalformedRequest{Status: http.StatusBadRequest, Message: message}
+			}
+		}
+		log.Printf("Error fetching album name: %v\n", err)
+		return "", err
+	}
+	defer rows.Close()
+
+	type Name struct {
+		Name string `db:"name"`
+	}
+	name, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Name])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			message := "Album with the provided ID does not exist."
+			return "", &custom.MalformedRequest{Status: http.StatusNotFound, Message: message}
+		}
+		log.Printf("Error reading rows: %v\n", err)
+		return "", err
+	}
+
+	return name.Name, nil
+}
+
 // photos
 
 func addPhotoToDatabase(p *Photos, userId, albumId string, wg *sync.WaitGroup, errChan chan error) {

@@ -94,6 +94,7 @@ func Router() *chi.Mux {
 		// gallery
 		r.Get("/services/gallery/albums", controllers.GetAlbumsByProjectIdClient)
 		r.Get("/services/gallery/album/{albumId}", controllers.GetPhotosByAlbumId)
+		r.Get("/services/gallery/album/{albumId}/name", controllers.GetAlbumNameById)
 
 		// documents
 		r.Get("/services/documents/cover", controllers.GetDocumentCoverByProjectIdClient)

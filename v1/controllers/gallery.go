@@ -209,6 +209,24 @@ func GetPhotosByAlbumId(w http.ResponseWriter, r *http.Request) {
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
 
+func GetAlbumNameById(w http.ResponseWriter, r *http.Request) {
+	albumId := chi.URLParam(r, "albumId")
+
+	var album services.Album
+	album.Id = albumId
+
+	name, err := album.GetAlbumNameById()
+	if err != nil {
+		helper.HandleError(w, err)
+		return
+	}
+
+	var payload services.JSONResponse
+	payload.Error = false
+	payload.Data = name
+	helper.EncodeJSON(w, http.StatusOK, payload)
+}
+
 func PostPhoto(w http.ResponseWriter, r *http.Request) {
 	maxSize := 10 << 20 // 10mb
 	err := helper.ParseMultipartForm(w, r, maxSize)

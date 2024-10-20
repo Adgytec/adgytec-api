@@ -2,14 +2,13 @@ package main
 
 import (
 	"errors"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/rohan031/adgytec-api/database"
 	"github.com/rohan031/adgytec-api/firebase"

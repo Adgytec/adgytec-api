@@ -98,6 +98,9 @@ func Router() *chi.Mux {
 
 		// documents
 		r.Get("/services/documents/cover", controllers.GetDocumentCoverByProjectIdClient)
+
+		// contact us
+		r.Post("/contact-us", controllers.PostContactUs)
 	})
 
 	// getting uuid

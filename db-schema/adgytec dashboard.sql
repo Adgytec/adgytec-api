@@ -165,3 +165,13 @@ CREATE TABLE "documents" (
 
 ALTER TABLE "documents" ADD FOREIGN KEY ("cover_id") REFERENCES "document_cover" ("cover_id") on update cascade on delete cascade;
 ALTER TABLE "documents" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+
+/* contact us */
+CREATE TABLE "contact_us" (
+    id uuid PRIMARY KEY DEFAULT(gen_random_uuid()),
+    project_id uuid NOT NULL,
+    created_at timestamp DEFAULT(now()),
+    data JSONB NOT NULL
+)
+
+ALTER TABLE "contact_us" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;

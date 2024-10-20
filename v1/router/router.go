@@ -1,13 +1,11 @@
 package router
 
 import (
-	"os"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
-
 	"github.com/rohan031/adgytec-api/v1/controllers"
 	"github.com/rohan031/adgytec-api/v1/middleware"
+	"os"
 )
 
 func Router() *chi.Mux {
@@ -16,7 +14,7 @@ func Router() *chi.Mux {
 	allowedOrigins := []string{
 		"https://*.adgytec.in",
 		"https://ecrimino.com",
-		"https://rural-development-eadbe.ondigitalocean.app",
+		"https://prise-rdc.com",
 	}
 	if os.Getenv("ENV") == "dev" {
 		allowedOrigins = append(allowedOrigins, "http://*")

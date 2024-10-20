@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"github.com/go-chi/httprate"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -58,6 +60,7 @@ func initApp() (*chi.Mux, *pgxpool.Pool) {
 	router := chi.NewRouter()
 
 	// middleware
+	router.Use(httprate.LimitByIP(50, time.Minute))
 	router.Use(middleware.Heartbeat("/"))
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)

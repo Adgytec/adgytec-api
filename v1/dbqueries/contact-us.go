@@ -15,3 +15,32 @@ func CreateContactUsItemArgs(projectID string, data map[string]interface{}) pgx.
 		"data":       data,
 	}
 }
+
+const GetContactUsItems = `
+	SELECT id, created_at, data FROM contact_us
+	WHERE
+	project_id = @projectId
+	AND 
+	created_at < @createdAt
+	ORDER BY created_at DESC
+	LIMIT 20
+`
+
+func GetContactUsItemsArgs(projectId, createdAt string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"projectId": projectId,
+		"createdAt": createdAt,
+	}
+}
+
+const DeleteContactUsById = `
+	DELETE FROM contact_us
+	WHERE
+	id = @contactId
+`
+
+func DeleteContactUsByIdArgs(contactId string) pgx.NamedArgs {
+	return pgx.NamedArgs{
+		"contactId": contactId,
+	}
+}

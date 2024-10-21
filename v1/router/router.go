@@ -147,6 +147,10 @@ func Router() *chi.Mux {
 		r.Post("/services/documents/{projectId}/cover", controllers.PostDocumentCover)
 		r.Patch("/services/documents/{projectId}/cover/{coverId}", controllers.PatchDocumentCoverById)
 		r.Delete("/services/documents/{projectId}/cover/{coverId}", controllers.DeleteDocumentCoverById)
+
+		// contact-us
+		r.Get("/services/contact-us/{projectId}", controllers.GetContactUs)
+		r.Delete("/services/contact-us/{projectId}/{contactId}", controllers.DeleteContactUsItem)
 	})
 
 	return router

@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rohan031/adgytec-api/helper"
@@ -13,13 +14,19 @@ import (
 func GetAlbumsByProjectId(w http.ResponseWriter, r *http.Request) {
 	projectId := chi.URLParam(r, "projectId")
 	cursor := r.URL.Query().Get("cursor")
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
 
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var albums services.Album
-	all, err := albums.GetAlbumsByProjectId(projectId, cursor)
+	all, pageInfo, err := albums.GetAlbumsByProjectId(projectId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -27,7 +34,13 @@ func GetAlbumsByProjectId(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Albums   *[]services.Album  `json:"albums"`
+		PageInfo *services.PageInfo `json:"pageInfo"`
+	}{
+		Albums:   all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
@@ -35,13 +48,19 @@ func GetAlbumsByProjectId(w http.ResponseWriter, r *http.Request) {
 func GetAlbumsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 	cursor := r.URL.Query().Get("cursor")
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
 
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var albums services.Album
-	all, err := albums.GetAlbumsByProjectId(projectId, cursor)
+	all, pageInfo, err := albums.GetAlbumsByProjectId(projectId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -49,7 +68,13 @@ func GetAlbumsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Albums   *[]services.Album  `json:"albums"`
+		PageInfo *services.PageInfo `json:"pageInfo"`
+	}{
+		Albums:   all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
@@ -190,13 +215,19 @@ func DeleteAlbumById(w http.ResponseWriter, r *http.Request) {
 func GetPhotosByAlbumId(w http.ResponseWriter, r *http.Request) {
 	albumId := chi.URLParam(r, "albumId")
 	cursor := r.URL.Query().Get("cursor")
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
 
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var photos services.Photos
-	all, err := photos.GetPhotosByAlbumId(albumId, cursor)
+	all, pageInfo, err := photos.GetPhotosByAlbumId(albumId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -204,7 +235,13 @@ func GetPhotosByAlbumId(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Photos   *[]services.Photos `json:"photos"`
+		PageInfo *services.PageInfo `json:"pageInfo"`
+	}{
+		Photos:   all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

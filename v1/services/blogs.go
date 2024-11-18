@@ -199,20 +199,31 @@ func (b *Blog) CreateBlog(r *http.Request, projectId, userId string) error {
 	return nil
 }
 
-func (b *Blog) GetBlogsByProjectId(projectId, createdAt string) (*[]BlogSummary, error) {
-	args := dbqueries.GetBlogsByProjectIdArgs(projectId, createdAt)
+func (b *Blog) GetBlogsByProjectId(projectId, createdAt string, limit int) (*[]BlogSummary, *PageInfo, error) {
+	args := dbqueries.GetBlogsByProjectIdArgs(projectId, createdAt, limit+1)
 	rows, err := db.Query(ctx, dbqueries.GetBlogsByProjectId, args)
 
 	if err != nil {
 		log.Printf("Error fetching blogs from db: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	blogs, err := pgx.CollectRows(rows, pgx.RowToStructByName[BlogSummary])
 	if err != nil {
 		log.Printf("Error reading rows: %v\n", err)
-		return nil, err
+		return nil, nil, err
+	}
+
+	var pageInfo PageInfo = PageInfo{
+		NextPage: false,
+		Cursor:   nil,
+	}
+
+	if len(blogs) > limit {
+		blogs = blogs[:len(blogs)-1]
+		pageInfo.NextPage = true
+		pageInfo.Cursor = &blogs[len(blogs)-1].CreatedAt
 	}
 
 	wg := new(sync.WaitGroup)
@@ -236,23 +247,34 @@ func (b *Blog) GetBlogsByProjectId(projectId, createdAt string) (*[]BlogSummary,
 		blogs[ind].Cover = url.Url
 	}
 
-	return &blogs, nil
+	return &blogs, &pageInfo, nil
 }
 
-func (b *Blog) GetBlogsByCategoryId(projectId, categoryId, createdAt string) (*[]BlogSummary, error) {
-	args := dbqueries.GetBlogsByCategoryIdArgs(projectId, categoryId, createdAt)
+func (b *Blog) GetBlogsByCategoryId(projectId, categoryId, createdAt string, limit int) (*[]BlogSummary, *PageInfo, error) {
+	args := dbqueries.GetBlogsByCategoryIdArgs(projectId, categoryId, createdAt, limit+1)
 	rows, err := db.Query(ctx, dbqueries.GetBlogsByCategoryId, args)
 
 	if err != nil {
 		log.Printf("Error fetching blogs from db: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	blogs, err := pgx.CollectRows(rows, pgx.RowToStructByName[BlogSummary])
 	if err != nil {
 		log.Printf("Error reading rows: %v\n", err)
-		return nil, err
+		return nil, nil, err
+	}
+
+	var pageInfo PageInfo = PageInfo{
+		NextPage: false,
+		Cursor:   nil,
+	}
+
+	if len(blogs) > limit {
+		blogs = blogs[:len(blogs)-1]
+		pageInfo.NextPage = true
+		pageInfo.Cursor = &blogs[len(blogs)-1].CreatedAt
 	}
 
 	wg := new(sync.WaitGroup)
@@ -276,7 +298,7 @@ func (b *Blog) GetBlogsByCategoryId(projectId, categoryId, createdAt string) (*[
 		blogs[ind].Cover = url.Url
 	}
 
-	return &blogs, nil
+	return &blogs, nil, nil
 }
 
 func (b *Blog) GetBlogById() (*Blog, error) {

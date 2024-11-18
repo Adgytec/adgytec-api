@@ -256,20 +256,30 @@ func (a *Album) PatchAlbumCoverById(r *http.Request, projectId string) error {
 	return nil
 }
 
-func (a *Album) GetAlbumsByProjectId(projectId, cursor string) (*[]Album, error) {
-	args := dbqueries.GetAlbumsByProjectIdArgs(projectId, cursor)
+func (a *Album) GetAlbumsByProjectId(projectId, cursor string, limit int) (*[]Album, *PageInfo, error) {
+	args := dbqueries.GetAlbumsByProjectIdArgs(projectId, cursor, limit+1)
 	rows, err := db.Query(ctx, dbqueries.GetAlbumsByProjectId, args)
 
 	if err != nil {
 		log.Printf("Error fetching albums from db: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	albums, err := pgx.CollectRows(rows, pgx.RowToStructByName[Album])
 	if err != nil {
 		log.Printf("Error reading rows: %v\n", err)
-		return nil, err
+		return nil, nil, err
+	}
+
+	var pageInfo PageInfo = PageInfo{
+		NextPage: false,
+		Cursor:   nil,
+	}
+	if len(albums) > limit {
+		albums = albums[:len(albums)-1]
+		pageInfo.NextPage = true
+		pageInfo.Cursor = &albums[len(albums)-1].CreatedAt
 	}
 
 	wg := new(sync.WaitGroup)
@@ -290,7 +300,7 @@ func (a *Album) GetAlbumsByProjectId(projectId, cursor string) (*[]Album, error)
 		albums[ind].Cover = url.Url
 	}
 
-	return &albums, nil
+	return &albums, &pageInfo, nil
 }
 
 func (a *Album) GetAlbumNameById() (string, error) {
@@ -451,20 +461,31 @@ func (p *Photos) DeletePhotoById(photoId []string) error {
 	return nil
 }
 
-func (p *Photos) GetPhotosByAlbumId(albumId, cursor string) (*[]Photos, error) {
-	args := dbqueries.GetPhotosByAlbumIdArgs(albumId, cursor)
+func (p *Photos) GetPhotosByAlbumId(albumId, cursor string, limit int) (*[]Photos, *PageInfo, error) {
+	args := dbqueries.GetPhotosByAlbumIdArgs(albumId, cursor, limit+1)
 	rows, err := db.Query(ctx, dbqueries.GetPhotosByAlbumId, args)
 
 	if err != nil {
 		log.Printf("Error fetching photos from db: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
 	photos, err := pgx.CollectRows(rows, pgx.RowToStructByName[Photos])
 	if err != nil {
 		log.Printf("Error reading rows: %v\n", err)
-		return nil, err
+		return nil, nil, err
+	}
+
+	var pageInfo PageInfo = PageInfo{
+		NextPage: false,
+		Cursor:   nil,
+	}
+
+	if len(photos) > limit {
+		photos = photos[:len(photos)-1]
+		pageInfo.NextPage = true
+		pageInfo.Cursor = &photos[len(photos)-1].CreatedAt
 	}
 
 	wg := new(sync.WaitGroup)
@@ -485,5 +506,5 @@ func (p *Photos) GetPhotosByAlbumId(albumId, cursor string) (*[]Photos, error) {
 		photos[ind].Path = url.Url
 	}
 
-	return &photos, nil
+	return &photos, &pageInfo, nil
 }

@@ -39,13 +39,14 @@ const GetBlogsByProjectId = `
 	WHERE b.project_id = @projectId
 	AND b.created_at < @createdAt
 	ORDER BY b.created_at DESC
-	LIMIT 20
+	LIMIT @limit
 `
 
-func GetBlogsByProjectIdArgs(projectId, createdAt string) pgx.NamedArgs {
+func GetBlogsByProjectIdArgs(projectId, createdAt string, limit int) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 		"createdAt": createdAt,
+		"limit":     limit,
 	}
 }
 
@@ -66,14 +67,15 @@ const GetBlogsByCategoryId = `
 	AND b.category_id IN (SELECT category_id FROM tree)
 	AND b.created_at < @createdAt
 	ORDER BY b.created_at DESC
-	LIMIT 20
+	LIMIT @limit
 `
 
-func GetBlogsByCategoryIdArgs(projectId, categoryId, createdAt string) pgx.NamedArgs {
+func GetBlogsByCategoryIdArgs(projectId, categoryId, createdAt string, limit int) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId":  projectId,
 		"categoryId": categoryId,
 		"createdAt":  createdAt,
+		"limit":      limit,
 	}
 }
 

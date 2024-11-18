@@ -27,14 +27,15 @@ const GetAlbumsByProjectId = `
 	project_id = @projectId
 	AND
 	created_at < @createdAt
-	ORDER BY created_at DESC
-	LIMIT 20
+	ORDER BY created_at DESC 
+	LIMIT @limit
 `
 
-func GetAlbumsByProjectIdArgs(projectId, createdAt string) pgx.NamedArgs {
+func GetAlbumsByProjectIdArgs(projectId, createdAt string, limit int) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 		"createdAt": createdAt,
+		"limit":     limit,
 	}
 }
 
@@ -120,13 +121,14 @@ const GetPhotosByAlbumId = `
 	album_id = @albumId
 	AND created_at < @createdAt
 	ORDER BY created_at DESC
-	LIMIT 20
+	LIMIT @limit
 `
 
-func GetPhotosByAlbumIdArgs(albumId, createdAt string) pgx.NamedArgs {
+func GetPhotosByAlbumIdArgs(albumId, createdAt string, limit int) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"albumId":   albumId,
 		"createdAt": createdAt,
+		"limit":     limit,
 	}
 }
 

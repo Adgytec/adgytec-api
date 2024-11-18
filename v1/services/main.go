@@ -46,6 +46,11 @@ type IndexedValue struct {
 	Url   string
 }
 
+type PageInfo struct {
+	NextPage bool       `json:"nextPage"`
+	Cursor   *time.Time `json:"cursor"`
+}
+
 func SetExternalConnection(pool *pgxpool.Pool, storage *minio.Client, client *auth.Client) {
 	db = pool
 	spaceStorage = storage

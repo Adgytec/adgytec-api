@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -152,13 +153,19 @@ func PostBlog(w http.ResponseWriter, r *http.Request) {
 func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 	projectId := chi.URLParam(r, "projectId")
 	cursor := r.URL.Query().Get("cursor")
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
 
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var blogs services.Blog
-	all, err := blogs.GetBlogsByProjectId(projectId, cursor)
+	all, pageInfo, err := blogs.GetBlogsByProjectId(projectId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -166,7 +173,13 @@ func GetAllBlogsByProjectId(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Blogs    *[]services.BlogSummary `json:"blogs"`
+		PageInfo *services.PageInfo      `json:"pageInfo"`
+	}{
+		Blogs:    all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 
@@ -177,12 +190,19 @@ func GetAllBlogsByCategoryId(w http.ResponseWriter, r *http.Request) {
 	categoryId := chi.URLParam(r, "categoryId")
 	cursor := r.URL.Query().Get("cursor")
 
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
+
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var blogs services.Blog
-	all, err := blogs.GetBlogsByCategoryId(projectId, categoryId, cursor)
+	all, pageInfo, err := blogs.GetBlogsByCategoryId(projectId, categoryId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -190,7 +210,13 @@ func GetAllBlogsByCategoryId(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Blogs    *[]services.BlogSummary `json:"blogs"`
+		PageInfo *services.PageInfo      `json:"pageInfo"`
+	}{
+		Blogs:    all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 
@@ -200,12 +226,19 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 	cursor := r.URL.Query().Get("cursor")
 
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
+
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var blogs services.Blog
-	all, err := blogs.GetBlogsByProjectId(projectId, cursor)
+	all, pageInfo, err := blogs.GetBlogsByProjectId(projectId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -213,7 +246,13 @@ func GetAllBlogsByProjectIdClient(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Blogs    *[]services.BlogSummary `json:"blogs"`
+		PageInfo *services.PageInfo      `json:"pageInfo"`
+	}{
+		Blogs:    all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }
@@ -222,13 +261,19 @@ func GetAllBlogsByCategoryIdClient(w http.ResponseWriter, r *http.Request) {
 	projectId := r.Context().Value(custom.ProjectId).(string)
 	categoryId := chi.URLParam(r, "categoryId")
 	cursor := r.URL.Query().Get("cursor")
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
 
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 
 	var blogs services.Blog
-	all, err := blogs.GetBlogsByCategoryId(projectId, categoryId, cursor)
+	all, pageInfo, err := blogs.GetBlogsByCategoryId(projectId, categoryId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -236,7 +281,13 @@ func GetAllBlogsByCategoryIdClient(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Blogs    *[]services.BlogSummary `json:"blogs"`
+		PageInfo *services.PageInfo      `json:"pageInfo"`
+	}{
+		Blogs:    all,
+		PageInfo: pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

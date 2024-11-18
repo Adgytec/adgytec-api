@@ -298,7 +298,7 @@ func (b *Blog) GetBlogsByCategoryId(projectId, categoryId, createdAt string, lim
 		blogs[ind].Cover = url.Url
 	}
 
-	return &blogs, nil, nil
+	return &blogs, &pageInfo, nil
 }
 
 func (b *Blog) GetBlogById() (*Blog, error) {

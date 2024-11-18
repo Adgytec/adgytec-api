@@ -23,13 +23,14 @@ const GetContactUsItems = `
 	AND 
 	created_at < @createdAt
 	ORDER BY created_at DESC
-	LIMIT 20
+	LIMIT @limit
 `
 
-func GetContactUsItemsArgs(projectId, createdAt string) pgx.NamedArgs {
+func GetContactUsItemsArgs(projectId, createdAt string, limit int) pgx.NamedArgs {
 	return pgx.NamedArgs{
 		"projectId": projectId,
 		"createdAt": createdAt,
+		"limit":     limit,
 	}
 }
 

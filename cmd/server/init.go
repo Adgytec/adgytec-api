@@ -59,7 +59,7 @@ func initApp() (*chi.Mux, *pgxpool.Pool) {
 	router := chi.NewRouter()
 
 	// middleware
-	router.Use(httprate.LimitByIP(50, time.Minute))
+	router.Use(httprate.LimitByIP(100, time.Minute))
 	router.Use(middleware.Heartbeat("/"))
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)

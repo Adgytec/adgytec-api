@@ -25,13 +25,13 @@ func (c *ContactUs) PostContactUs(projectId string, data map[string]interface{})
 	return err
 }
 
-func (c *ContactUs) GetContactUs(projectId, cursor string) (*[]ContactUs, error) {
-	args := dbqueries.GetContactUsItemsArgs(projectId, cursor)
+func (c *ContactUs) GetContactUs(projectId, cursor string, limit int) (*[]ContactUs, *PageInfo, error) {
+	args := dbqueries.GetContactUsItemsArgs(projectId, cursor, limit+1)
 	rows, err := db.Query(ctx, dbqueries.GetContactUsItems, args)
 
 	if err != nil {
 		log.Printf("Error fetching contact us items from db: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	defer rows.Close()
@@ -39,10 +39,21 @@ func (c *ContactUs) GetContactUs(projectId, cursor string) (*[]ContactUs, error)
 	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[ContactUs])
 	if err != nil {
 		log.Printf("Error reading rows: %v\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &items, nil
+	var pageInfo PageInfo = PageInfo{
+		NextPage: false,
+		Cursor:   nil,
+	}
+
+	if len(items) > limit {
+		items = items[:len(items)-1]
+		pageInfo.NextPage = true
+		pageInfo.Cursor = &items[len(items)-1].CreatedAt
+	}
+
+	return &items, &pageInfo, nil
 }
 
 func (c *ContactUs) DeleteContactUsById() error {

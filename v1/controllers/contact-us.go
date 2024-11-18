@@ -6,6 +6,7 @@ import (
 	"github.com/rohan031/adgytec-api/v1/custom"
 	"github.com/rohan031/adgytec-api/v1/services"
 	"net/http"
+	"strconv"
 )
 
 func PostContactUs(w http.ResponseWriter, r *http.Request) {
@@ -35,12 +36,18 @@ func PostContactUs(w http.ResponseWriter, r *http.Request) {
 func GetContactUs(w http.ResponseWriter, r *http.Request) {
 	projectId := chi.URLParam(r, "projectId")
 	cursor := r.URL.Query().Get("cursor")
+	limString := r.URL.Query().Get("limit")
+
+	limit, err := strconv.Atoi(limString)
+	if err != nil || limit > 20 || limit < 1 {
+		limit = 20 // default limit
+	}
 
 	if len(cursor) == 0 {
 		cursor = getNow()
 	}
 	var contactUs services.ContactUs
-	all, err := contactUs.GetContactUs(projectId, cursor)
+	all, pageInfo, err := contactUs.GetContactUs(projectId, cursor, limit)
 	if err != nil {
 		helper.HandleError(w, err)
 		return
@@ -48,7 +55,13 @@ func GetContactUs(w http.ResponseWriter, r *http.Request) {
 
 	var payload services.JSONResponse
 	payload.Error = false
-	payload.Data = all
+	payload.Data = struct {
+		Responses *[]services.ContactUs `json:"responses"`
+		PageInfo  *services.PageInfo    `json:"pageInfo"`
+	}{
+		Responses: all,
+		PageInfo:  pageInfo,
+	}
 
 	helper.EncodeJSON(w, http.StatusOK, payload)
 }

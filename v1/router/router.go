@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/rohan031/adgytec-api/v1/controllers"
 	"github.com/rohan031/adgytec-api/v1/middleware"
-	"os"
 )
 
 func Router() *chi.Mux {
@@ -16,9 +15,9 @@ func Router() *chi.Mux {
 		"https://ecrimino.com",
 		"https://prise-rdc.com",
 	}
-	if os.Getenv("ENV") == "dev" {
-		allowedOrigins = append(allowedOrigins, "http://*")
-	}
+	//if os.Getenv("ENV") == "dev" {
+	allowedOrigins = append(allowedOrigins, "http://*")
+	//}
 
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,

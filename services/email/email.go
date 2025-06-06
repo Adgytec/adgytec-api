@@ -9,18 +9,32 @@ import "os"
 type emailService struct {
 	username   string
 	password   string
-	from       Email
+	from       string
 	smtpServer string
 	smtpPort   string
 }
 
-// CreateEmailService is a factory method to construct email service
-func CreateEmailService(address Email) IEmailService {
+// CreateDefaultEmailService is a factory method to construct email service with defaults
+//
+// SMTP server used is configured using env variables
+// user account used to authenticate is configured using env variables
+func CreateDefaultEmailService(address string) IEmailService {
+	return CreateEmailService(Config{
+		Username:   os.Getenv("USERNAME"),
+		Password:   os.Getenv("PASSWORD"),
+		SmtpServer: os.Getenv("smtp_server"),
+		SmtpPort:   os.Getenv("smtp_server"),
+		From:       address,
+	})
+}
+
+// CreateEmailService creates an email service with given Config
+func CreateEmailService(emailConfig Config) IEmailService {
 	return &emailService{
-		username:   os.Getenv("USERNAME"),
-		password:   os.Getenv("PASSWORD"),
-		smtpServer: os.Getenv("smtp_server"),
-		smtpPort:   os.Getenv("smtp_server"),
-		from:       address,
+		username:   emailConfig.Username,
+		password:   emailConfig.Password,
+		smtpServer: emailConfig.SmtpServer,
+		smtpPort:   emailConfig.SmtpPort,
+		from:       emailConfig.From,
 	}
 }

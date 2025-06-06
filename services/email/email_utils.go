@@ -42,3 +42,15 @@ func (e *Email) IsValid() bool {
 		return false
 	}
 }
+
+// Config defines email config required to create email service
+//
+// Username: username used to authenticate with the smtp server
+// From: email address used to send email, it can be alias for Username or can be Username itself
+type Config struct {
+	SmtpServer string `validate:"required,fqdn"`
+	SmtpPort   string `validate:"required,number"`
+	Username   string `validate:"required,email"`
+	Password   string `validate:"required"`
+	From       string `validate:"required,email"`
+}

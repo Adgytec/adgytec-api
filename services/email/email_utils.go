@@ -1,5 +1,10 @@
 package email
 
+import "github.com/go-playground/validator/v10"
+
+// validatorObj used to validate structs inside package email
+var validatorObj = validator.New()
+
 // IEmailService is an interface that allows sending emails
 type IEmailService interface {
 	SendEmail(emailData ISendEmail) error
@@ -23,26 +28,6 @@ type ISendEmail interface {
 	GetAttachments() []Attachment
 }
 
-// Email defines a email address used to send emails
-type Email string
-
-// address used to send all types of email
-const (
-	ADMIN   Email = "admin@adgytec.in"
-	TEAM    Email = "team@adgytec.in"
-	NOREPLY Email = "no-reply@adgytec.in"
-	AUTH    Email = "auth@adgytec.in"
-)
-
-func (e *Email) IsValid() bool {
-	switch *e {
-	case ADMIN, TEAM, NOREPLY, AUTH:
-		return true
-	default:
-		return false
-	}
-}
-
 // Config defines email config required to create email service
 //
 // Username: username used to authenticate with the smtp server
@@ -54,3 +39,11 @@ type Config struct {
 	Password   string `validate:"required"`
 	From       string `validate:"required,email"`
 }
+
+// address used to send all types of email
+const (
+	ADMIN   = "admin@adgytec.in"
+	TEAM    = "team@adgytec.in"
+	NOREPLY = "no-reply@adgytec.in"
+	AUTH    = "auth@adgytec.in"
+)

@@ -18,7 +18,7 @@ type emailService struct {
 //
 // SMTP server used is configured using env variables
 // user account used to authenticate is configured using env variables
-func CreateDefaultEmailService(address string) IEmailService {
+func CreateDefaultEmailService(address string) (IEmailService, error) {
 	return CreateEmailService(Config{
 		Username:   os.Getenv("USERNAME"),
 		Password:   os.Getenv("PASSWORD"),
@@ -29,12 +29,17 @@ func CreateDefaultEmailService(address string) IEmailService {
 }
 
 // CreateEmailService creates an email service with given Config
-func CreateEmailService(emailConfig Config) IEmailService {
+func CreateEmailService(emailConfig Config) (IEmailService, error) {
+	err := validatorObj.Struct(emailConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	return &emailService{
 		username:   emailConfig.Username,
 		password:   emailConfig.Password,
 		smtpServer: emailConfig.SmtpServer,
 		smtpPort:   emailConfig.SmtpPort,
 		from:       emailConfig.From,
-	}
+	}, nil
 }

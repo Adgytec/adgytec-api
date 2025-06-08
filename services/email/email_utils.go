@@ -40,10 +40,12 @@ type Config struct {
 	From       string `validate:"required,email"`
 }
 
-// address used to send all types of email
+// address used to send email for different purposes
 const (
-	ADMIN   = "admin@adgytec.in"
-	TEAM    = "team@adgytec.in"
-	NOREPLY = "no-reply@adgytec.in"
-	AUTH    = "auth@adgytec.in"
+	AUTH            = "Adgytec Auth <auth@adgytec.in>"
+	INVITE          = "Adgytec Invites <invite@adgytec.in>"
+	BILLING         = "Adgytec Billing <billing@adgytec.in>"
+	CONTRACTS       = "Adgytec Contracts <contracts@adgytec.in>"
+	BIRTHDAY_WISHES = "Adgytec Wishes <wishes@adgytec.in>"
+	USER_MANAGEMENT = "Adgytec Accounts <accounts@adgytec.in>"
 )

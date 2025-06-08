@@ -1,0 +1,90 @@
+<body
+        style="
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        color: #353535;
+        font-size: 1.125rem;
+        line-height: 1.6;
+    "
+>
+<div
+        class="container"
+        style="
+            width: min(100%, 40em);
+            margin-right: auto;
+            margin-left: auto;
+            margin-bottom: 1em;
+            margin-top: 4em;
+            border-bottom: 1px solid #353535;
+            padding-bottom: 1em;
+            padding-left: 1em;
+            padding-right: 1em;
+        "
+>
+    <!-- Email Content -->
+    <div class="content">
+        <p>Hi <strong>{name}</strong>,</p>
+
+        <p style="margin-top: 1em;">
+            You've been invited to join the organization <strong>{organization}</strong> on Adgytec!
+        </p>
+
+        <p style="margin-top: 1em;">
+            To accept this invitation and gain access to <strong>{organizationName}</strong> services, please click the
+            link
+            below:
+        </p>
+
+        <p style="margin-top: 2em; text-align: center;">
+            <a href="{inviteLink}" target="_blank"
+               style="
+                       display: inline-block;
+                       padding: 12px 25px;
+                       background-color: #007bff; /* A simple blue for call to action */
+                       color: #ffffff;
+                       text-decoration: none;
+                       border-radius: 5px;
+                       font-weight: bold;
+                       font-size: 1.1em;
+                   "
+            >
+                Accept Invitation
+            </a>
+        </p>
+
+        <p style="margin-top: 1em; text-align: center; font-size: 0.9em; color: #666;">
+            This invitation will expire in 48 hours.
+        </p>
+
+        <p style="margin-top: 2em;">
+            This invitation was sent by <strong>{inviterName}</strong> from <strong>{organizationName}</strong>.
+        </p>
+
+        <p style="margin-top: 1em;">
+            If you did not expect this invitation, you can safely ignore this email.
+        </p>
+
+        <p style="margin-top: 1em;">
+            Thanks,
+            <br/>
+            The Adgytec Team
+        </p>
+
+        <p class="small" style="margin-top: 2em; font-size: 0.875rem">
+            Note:
+            <em
+            >This is a system-generated email; please do not reply to
+                it.</em
+            >
+        </p>
+
+        <p
+                class="center"
+                style="text-align: center; margin-top: 2em; font-size: 1rem;"
+        >
+            © 2025
+            <a href="https://adgytec.in" target="_blank">Adgytec</a> All rights
+            reserved.
+        </p>
+    </div>
+</div>
+</body>

@@ -3,7 +3,7 @@ package dbqueries
 import "github.com/jackc/pgx/v5"
 
 const CreatePriseReportItem = `
-	INSERT INTO prise-reports 
+	INSERT INTO "prise-reports" 
 	(project_id, data, region)
 	VALUES
 	(@project_id, @data, @region)
@@ -18,7 +18,7 @@ func CreatePriseReportItemArgs(projectID, region string, data map[string]interfa
 }
 
 const GetPriseReportItems = `
-	SELECT id, created_at, data, region FROM prise-reports 
+	SELECT id, created_at, data, region FROM "prise-reports" 
 	WHERE
 	project_id = @projectId
 	And region = @region
@@ -32,7 +32,7 @@ func GetPriseReportItemsArgs(projectId, region string) pgx.NamedArgs {
 }
 
 const UpdatePriseReportById = `
-	Update prise-reports 
+	Update "prise-reports" 
 	set data=@data
 	WHERE
 	id = @reportId
@@ -46,7 +46,7 @@ func UpdatePriseReportByIdArgs(reportId string, data map[string]interface{}) pgx
 }
 
 const DeletePriseReportById = `
-	DELETE FROM prise-reports 
+	DELETE FROM "prise-reports" 
 	WHERE
 	id = @reportId
 `

@@ -98,6 +98,10 @@ func Router() *chi.Mux {
 
 		// contact us
 		r.Post("/services/contact-us", controllers.PostContactUs)
+
+		// prise-reports
+		r.Get("/services/prise-reports/{region}", controllers.GetPriseReports)
+
 	})
 
 	// getting uuid
@@ -150,6 +154,13 @@ func Router() *chi.Mux {
 		// contact-us
 		r.Get("/services/contact-us/{projectId}", controllers.GetContactUs)
 		r.Delete("/services/contact-us/{projectId}/{contactId}", controllers.DeleteContactUsItem)
+
+		// prise-reports
+		r.Get("/services/prise-reports/{projectId}/{region}", controllers.GetPriseReports)
+		r.Post("/services/prise-reports/{projectId}/{region}", controllers.PostPriseReports)
+		r.Patch("/services/prise-reports/{projectId}/{reportId}", controllers.UpdatePriseReports)
+		r.Delete("/services/prise-reports/{projectId}/{reportId}", controllers.DeletePriseReports)
+
 	})
 
 	return router

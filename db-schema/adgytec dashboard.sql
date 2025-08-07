@@ -1,177 +1,227 @@
 -- noinspection SqlNoDataSourceInspectionForFile
-
 CREATE TABLE "users" (
-  "user_id" varchar PRIMARY KEY,
-  "name" varchar NOT NULL,
-  "email" varchar NOT NULL,
-  "created_at" timestamp DEFAULT (now()),
-  "role" varchar NOT NULL,
-  "cursor" serial NOT NULL
+	"user_id" VARCHAR PRIMARY KEY,
+	"name" VARCHAR NOT NULL,
+	"email" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now()),
+	"role" VARCHAR NOT NULL,
+	"cursor" serial NOT NULL
 );
 
 CREATE TABLE "project" (
-  "project_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "project_name" varchar NOT NULL UNIQUE,
-  "created_at" timestamp DEFAULT (now()),
-  "cover_image" varchar NOT Null
+	"project_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"project_name" VARCHAR NOT NULL UNIQUE,
+	"created_at" TIMESTAMP DEFAULT (now()),
+	"cover_image" VARCHAR NOT NULL
 );
 
 CREATE TABLE "services" (
-  "service_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "service_name" varchar NOT NULL,
-  "created_at" timestamp DEFAULT (now())
+	"service_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"service_name" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now())
 );
 
 CREATE TABLE "user_to_project" (
-  "user_id" varchar,
-  "project_id" uuid
+	"user_id" VARCHAR,
+	"project_id" UUID
 );
 
 CREATE TABLE "project_to_service" (
-  "project_id" uuid,
-  "service_id" uuid
+	"project_id" UUID,
+	"service_id" UUID
 );
 
 CREATE TABLE "client_token" (
-  "token" varchar PRIMARY KEY,
-  "project_id" uuid
+	"token" VARCHAR PRIMARY KEY,
+	"project_id" UUID
 );
 
-ALTER TABLE "user_to_project" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on delete cascade on update cascade;
+ALTER TABLE "user_to_project"
+ADD FOREIGN key ("user_id") REFERENCES "users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE "user_to_project" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "user_to_project"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE "project_to_service" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "project_to_service"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE "project_to_service" ADD FOREIGN KEY ("service_id") REFERENCES "services" ("service_id") on delete cascade on update cascade;
+ALTER TABLE "project_to_service"
+ADD FOREIGN key ("service_id") REFERENCES "services" ("service_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE "client_token" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
+ALTER TABLE "client_token"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE "user_to_project" ADD PRIMARY KEY ("user_id", "project_id");
+ALTER TABLE "user_to_project"
+ADD PRIMARY KEY (
+	"user_id",
+	"project_id"
+);
 
-ALTER TABLE "project_to_service" ADD PRIMARY KEY ("service_id", "project_id");
-
+ALTER TABLE "project_to_service"
+ADD PRIMARY KEY (
+	"service_id",
+	"project_id"
+);
 
 /*
-    service schema
+service schema
 */
-
 /* news */
 CREATE TABLE "news" (
-    "news_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-    "project_id" uuid,
-    "title" varchar NOT NULL,
-    "link" varchar NOT NULL,
-    "text" varchar NOT NULL,
-    "image" varchar NOT NULL,
-    "created_at" timestamp DEFAULT (now())
+	"news_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"project_id" UUID,
+	"title" VARCHAR NOT NULL,
+	"link" VARCHAR NOT NULL,
+	"text" VARCHAR NOT NULL,
+	"image" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now())
 );
 
-ALTER TABLE "news" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
+ALTER TABLE "news"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON UPDATE CASCADE;
 
 /* blogs */
 CREATE TABLE "blogs" (
-  "blog_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "user_id" varchar NOT NULL,
-  "project_id" uuid NOT NULL,
-  "category_id" uuid NOT NULL,
-  "author" varchar NOT NULL,
-  "title" varchar NOT NULL,
-  "cover_image" varchar NOT NULL,
-  "short_text" varchar,
-  "content" varchar NOT NULL,
-  "created_at" timestamp DEFAULT (now()),
-  "updated_at" timestamp DEFAULT (now())
+	"blog_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"user_id" VARCHAR NOT NULL,
+	"project_id" UUID NOT NULL,
+	"category_id" UUID NOT NULL,
+	"author" VARCHAR NOT NULL,
+	"title" VARCHAR NOT NULL,
+	"cover_image" VARCHAR NOT NULL,
+	"short_text" VARCHAR,
+	"content" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now()),
+	"updated_at" TIMESTAMP DEFAULT (now())
 );
 
-ALTER TABLE "blogs" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
-ALTER TABLE "blogs" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
-ALTER TABLE "blogs" ADD FOREIGN KEY ("category_id") REFERENCES "category" ("category_id") on update cascade;
+ALTER TABLE "blogs"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON UPDATE CASCADE;
+
+ALTER TABLE "blogs"
+ADD FOREIGN key ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE;
+
+ALTER TABLE "blogs"
+ADD FOREIGN key ("category_id") REFERENCES "category" ("category_id") ON UPDATE CASCADE;
 
 /* category */
 CREATE TABLE "category" (
-  "category_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-  "parent_id" uuid,
-  "project_id" uuid NOT NULL,
-  "category_name" varchar NOT NULL,
-  "created_at" timestamp DEFAULT (now())
+	"category_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"parent_id" UUID,
+	"project_id" UUID NOT NULL,
+	"category_name" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now())
 );
 
-ALTER TABLE "category" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on delete cascade on update cascade;
-ALTER TABLE "category" ADD FOREIGN KEY ("parent_id") REFERENCES "category" ("category_id") on delete cascade on update cascade;
+ALTER TABLE "category"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+ALTER TABLE "category"
+ADD FOREIGN key ("parent_id") REFERENCES "category" ("category_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 /*
-    custom function and aggregate
+custom function and aggregate
 */
-CREATE OR REPLACE FUNCTION jsonb_set(x jsonb, y jsonb, p text[], e jsonb, b boolean)
-RETURNS jsonb LANGUAGE sql AS $$
-SELECT CASE WHEN x IS NULL THEN e ELSE jsonb_set(x, p, e, b) END ; $$ ;
+CREATE OR REPLACE FUNCTION jsonb_set(
+	x JSONB,
+	y JSONB,
+	p TEXT[],
+	e JSONB,
+	b BOOLEAN
+) returns JSONB language sql AS $$
+SELECT CASE WHEN x IS NULL THEN e ELSE jsonb_set(x, p, e, b) END ; $$;
 
-CREATE OR REPLACE AGGREGATE jsonb_set_agg(x jsonb, p text[], e jsonb, b boolean)
-( STYPE = jsonb, SFUNC = jsonb_set);
-
+CREATE OR REPLACE AGGREGATE jsonb_set_agg (
+	x JSONB,
+	p TEXT[],
+	e JSONB,
+	b BOOLEAN
+) (
+	stype = JSONB,
+	sfunc = jsonb_set
+);
 
 /* gallery */
-
 /* album */
 CREATE TABLE "album" (
-	"album_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-	"project_id" uuid NOT NULL,
-    "user_id" varchar NOT NULL,
-	"name" varchar NOT NULL,
-	"cover" varchar NOT NULL,
-	"created_at" timestamp DEFAULT(now())
+	"album_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"project_id" UUID NOT NULL,
+	"user_id" VARCHAR NOT NULL,
+	"name" VARCHAR NOT NULL,
+	"cover" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now())
 )
+ALTER TABLE "album"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON UPDATE CASCADE;
 
-ALTER TABLE "album" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
-ALTER TABLE "album" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+ALTER TABLE "album"
+ADD FOREIGN key ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE;
 
 /* photos */
 CREATE TABLE "photos" (
-    "photo_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-    "album_id" uuid NOT NULL,
-    "path" varchar NOT NULL,
-    "created_at" timestamp DEFAULT(now()),
-    "user_id" varchar NOT NULL
+	"photo_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"album_id" UUID NOT NULL,
+	"path" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now()),
+	"user_id" VARCHAR NOT NULL
 )
+ALTER TABLE "photos"
+ADD FOREIGN key ("album_id") REFERENCES "album" ("album_id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE "photos" ADD FOREIGN KEY ("album_id") REFERENCES "album" ("album_id") on update cascade on delete cascade;
-ALTER TABLE "photos" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+ALTER TABLE "photos"
+ADD FOREIGN key ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE;
 
 /* documents */
-
 /* cover */
 CREATE TABLE "document_cover" (
-    "cover_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-    "project_id" uuid NOT NULL,
-    "user_id" varchar NOT NULL,
-    "name" varchar NOT NULL,
-    "created_at" timestamp DEFAULT(now())
+	"cover_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"project_id" UUID NOT NULL,
+	"user_id" VARCHAR NOT NULL,
+	"name" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now())
 )
+ALTER TABLE "document_cover"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON UPDATE CASCADE;
 
-ALTER TABLE "document_cover" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
-ALTER TABLE "document_cover" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+ALTER TABLE "document_cover"
+ADD FOREIGN key ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE;
 
 /* document files */
 CREATE TABLE "documents" (
-     "document_id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
-     "cover_id" uuid NOT NULL,
-     "path" varchar NOT NULL,
-     "created_at" timestamp DEFAULT(now()),
-     "user_id" varchar NOT NULL,
-     "name" varchar NOT NULL
-)
+	"document_id" UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	"cover_id" UUID NOT NULL,
+	"path" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT (now()),
+	"user_id" VARCHAR NOT NULL,
+	"name" VARCHAR NOT NULL
+);
 
-ALTER TABLE "documents" ADD FOREIGN KEY ("cover_id") REFERENCES "document_cover" ("cover_id") on update cascade on delete cascade;
-ALTER TABLE "documents" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") on update cascade;
+ALTER TABLE "documents"
+ADD FOREIGN key ("cover_id") REFERENCES "document_cover" ("cover_id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE "documents"
+ADD FOREIGN key ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE;
 
 /* contact us */
 CREATE TABLE "contact_us" (
-    id uuid PRIMARY KEY DEFAULT(gen_random_uuid()),
-    project_id uuid NOT NULL,
-    created_at timestamp DEFAULT(now()),
-    data JSONB NOT NULL
-)
+	id UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	project_id UUID NOT NULL,
+	created_at TIMESTAMP DEFAULT (now()),
+	data JSONB NOT NULL
+);
 
-ALTER TABLE "contact_us" ADD FOREIGN KEY ("project_id") REFERENCES "project" ("project_id") on update cascade;
+ALTER TABLE "contact_us"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON UPDATE CASCADE;
+
+/* prise-reports*/
+CREATE TABLE "prise-reports" (
+	id UUID PRIMARY KEY DEFAULT (gen_random_uuid()),
+	project_id UUID NOT NULL,
+	created_at TIMESTAMP DEFAULT (now()),
+	data JSONB NOT NULL,
+	region VARCHAR NOT NULL
+);
+
+ALTER TABLE "prise-reports"
+ADD FOREIGN key ("project_id") REFERENCES "project" ("project_id") ON UPDATE CASCADE;
+
